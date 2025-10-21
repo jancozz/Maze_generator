@@ -8,7 +8,7 @@ def main():
     root = CTk()
     root.title("Generador y Solucionador de Laberintos")
     root.geometry(
-        f"{790}x{820}+{int(root.winfo_screenwidth() / 2 - 395)}+{int(root.winfo_screenheight() / 2 - 410)}")
+        f"{750}x{810}+{int(root.winfo_screenwidth() / 2 - 375)}+{int(root.winfo_screenheight() / 2 - 405)}")
     app = MazeController(root)
     root.mainloop()
 
