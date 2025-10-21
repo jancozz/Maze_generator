@@ -12,9 +12,9 @@ class MazeView:
         self.root = root
         self.controller = controller
         self.cell_size = 27
-        self.margin = 30
+        self.margin = 15
 
-        self.canvas = ctk.CTkCanvas(root, width=730, height=730, bg="#1e1e1e", highlightthickness=0)
+        self.canvas = ctk.CTkCanvas(root, width=705, height=705, bg="#1e1e1e", highlightthickness=0)
         self.canvas.pack(pady=10)
 
         self.setup_controls()
@@ -47,13 +47,27 @@ class MazeView:
 
                 wall_color = "#cccccc"
                 if cell.walls['N']:
-                    self.canvas.create_line(x1, y1, x2, y1, fill=wall_color)
+                    self.canvas.create_line(x1, y1, x2, y1, width=2, fill=wall_color)
                 if cell.walls['S']:
-                    self.canvas.create_line(x1, y2, x2, y2, fill=wall_color)
+                    self.canvas.create_line(x1, y2, x2, y2, width=2, fill=wall_color)
                 if cell.walls['E']:
-                    self.canvas.create_line(x2, y1, x2, y2, fill=wall_color)
+                    self.canvas.create_line(x2, y1, x2, y2, width=2, fill=wall_color)
                 if cell.walls['W']:
-                    self.canvas.create_line(x1, y1, x1, y2, fill=wall_color)
+                    self.canvas.create_line(x1, y1, x1, y2, width=2, fill=wall_color)
+
+        # Flecha de entrada
+        ex, ey = maze.entry
+        ey_center = ey * self.cell_size + self.margin + self.cell_size // 2
+        x_start = ex * self.cell_size + self.margin - 5
+        x_end = ex * self.cell_size + self.margin + 10
+        self.canvas.create_line(x_start, ey_center, x_end, ey_center, fill="red", width=3, arrow="last")
+
+        # Flecha de salida
+        sx, sy = maze.exit
+        sy_center = sy * self.cell_size + self.margin + self.cell_size // 2
+        x_start = sx * self.cell_size + self.margin + self.cell_size - 5
+        x_end = sx * self.cell_size + self.margin + self.cell_size + 10
+        self.canvas.create_line(x_start, sy_center, x_end, sy_center, fill="red", width=3, arrow="last")
 
     def draw_path_animated(self, path, delay=30):
         """
@@ -76,7 +90,7 @@ class MazeView:
             x2 = x2 * self.cell_size + self.margin + self.cell_size // 2
             y2 = y2 * self.cell_size + self.margin + self.cell_size // 2
 
-            self.canvas.create_line(x1, y1, x2, y2, fill="#057032", width=8)
+            self.canvas.create_line(x1, y1, x2, y2, fill="#057032", width=6)
             self.root.after(delay, lambda: draw_step(index + 1))
 
         draw_step(0)
