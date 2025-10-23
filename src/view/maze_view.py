@@ -30,7 +30,8 @@ class MazeView:
 
         ctk.CTkButton(frame, text="Generar (DFS)", command=lambda: self.controller.generate_maze(25, 25, "DFS"), **button_style).pack(side="left", padx=8)
         ctk.CTkButton(frame, text="Generar (Kruskal)", command=lambda: self.controller.generate_maze(25, 25, "Kruskal"), **button_style).pack(side="left", padx=8)
-        ctk.CTkButton(frame, text="Resolver (BFS)", command=self.controller.solve_maze, **button_style).pack(side="left", padx=8)
+        ctk.CTkButton(frame, text="Resolver (BFS)", command=lambda: self.controller.solve_maze(""), **button_style).pack(side="left", padx=8)
+        ctk.CTkButton(frame, text="Resolver (A*)", command=lambda: self.controller.solve_maze("ASTAR"), **button_style).pack(side="left", padx=8)
 
     def draw_maze(self, maze):
         """
@@ -69,7 +70,7 @@ class MazeView:
         x_end = sx * self.cell_size + self.margin + self.cell_size + 10
         self.canvas.create_line(x_start, sy_center, x_end, sy_center, fill="red", width=3, arrow="last")
 
-    def draw_path_animated(self, path, delay=30):
+    def draw_path_animated(self, path, delay, visited=None, color="#057032"):
         """
         Dibuja el camino como una línea animada que crece paso a paso.
         """
@@ -90,7 +91,7 @@ class MazeView:
             x2 = x2 * self.cell_size + self.margin + self.cell_size // 2
             y2 = y2 * self.cell_size + self.margin + self.cell_size // 2
 
-            self.canvas.create_line(x1, y1, x2, y2, fill="#057032", width=6)
+            self.canvas.create_line(x1, y1, x2, y2, fill=color, width=6)
             self.root.after(delay, lambda: draw_step(index + 1))
 
         draw_step(0)

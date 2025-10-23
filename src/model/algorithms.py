@@ -33,20 +33,6 @@ class DisjointSet:
             return True
         return False
 
-def get_border_cells(maze):
-    """
-    Devuelve una lista de todas las celdas en el borde del laberinto.
-    """
-    border = []
-    w, h = maze.width, maze.height
-    for x in range(w):
-        border.append((x, 0))
-        border.append((x, h - 1))
-    for y in range(h):
-        border.append((0, y))
-        border.append((w - 1, y))
-    return border
-
 def open_border_wall(maze, cell):
     """
     Abre la pared correspondiente si la celda está en el borde.
@@ -65,16 +51,11 @@ def assign_entry_exit(maze):
     """
     Asigna entrada y salida aleatorias con preferencia de izquierda a derecha.
     """
-    border_cells = get_border_cells(maze)
     entry_candidates = [(0, y) for y in range(maze.height)]
     exit_candidates = [(maze.width - 1, y) for y in range(maze.height)]
 
     entry = random.choice(entry_candidates)
     exit = random.choice(exit_candidates)
-
-    # Evitar que entrada y salida sean iguales
-    while exit == entry:
-        exit = random.choice(border_cells)
 
     open_border_wall(maze, entry)
     open_border_wall(maze, exit)
@@ -114,11 +95,29 @@ def generate_maze_dfs(maze):
                 maze.grid[nx][ny].walls[opposite[direction]] = False
                 dfs(nx, ny)
 
+    def add_extra_passages(maze, count):
+        for _ in range(count):
+            x = random.randint(0, width - 2)
+            y = random.randint(0, height - 2)
+            direction = random.choice(['E', 'S'])
+            dx, dy = 1 if direction == 'E' else 0, 1 if direction == 'S' else 0
+            nx, ny = x + dx, y + dy
+
+            cell1 = maze.grid[x][y]
+            cell2 = maze.grid[nx][ny]
+
+            if cell1.walls[direction]:
+                cell1.walls[direction] = False
+                opposite = {'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}
+                cell2.walls[opposite[direction]] = False
+
     # Comenzar desde una celda aleatoria
     start_x = random.randint(0, width - 1)
     start_y = random.randint(0, height - 1)
     dfs(start_x, start_y)
 
+    extra = int(width * height * 0.40)
+    add_extra_passages(maze, count=extra)
     assign_entry_exit(maze)
 
 def generate_maze_kruskal(maze):
@@ -144,11 +143,22 @@ def generate_maze_kruskal(maze):
             x1, y1 = cell1
             x2, y2 = cell2
             maze.grid[x1][y1].walls[direction] = False
-            if direction == 'E':
-                maze.grid[x2][y2].walls['W'] = False
-            elif direction == 'S':
-                maze.grid[x2][y2].walls['N'] = False
+            maze.grid[x2][y2].walls[{'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}[direction]] = False
 
+    def add_extra_edges(maze, edges, count):
+        added = 0
+        for cell1, cell2, direction in edges:
+            if added >= count:
+                break
+            x1, y1 = cell1
+            x2, y2 = cell2
+            if maze.grid[x1][y1].walls[direction]:
+                maze.grid[x1][y1].walls[direction] = False
+                maze.grid[x2][y2].walls[{'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}[direction]] = False
+                added += 1
+
+    extra = int(width * height * 0.20)
+    add_extra_edges(maze, edges, count=extra)
     assign_entry_exit(maze)
 
 def solve_maze_bfs(maze, start, end):
@@ -184,4 +194,55 @@ def solve_maze_bfs(maze, start, end):
             return []
     path.append(start)
     path.reverse()
-    return path
+    return path, visited
+
+def solve_maze_astar(maze, start, end):
+    """
+    Resuelve el laberinto usando A*.
+    Devuelve una lista de coordenadas que forman el camino desde start hasta end.
+    """
+
+    def heuristic(a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+    open_list = [start]
+    came_from = {}
+    g_score = {start: 0}
+    f_score = {start: heuristic(start, end)}
+    visited = set()
+
+    while open_list:
+        # Seleccionar nodo con menor f_score
+        current = min(open_list, key=lambda c: f_score.get(c, float('inf')))
+        open_list.remove(current)
+        visited.add(current)
+
+        if current == end:
+            break
+
+        x, y = current
+        cell = maze.grid[x][y]
+
+        for neighbor in maze.get_neighbors(cell):
+            nx, ny = neighbor.x, neighbor.y
+            neighbor_coord = (nx, ny)
+            tentative_g = g_score[current] + 1
+
+            if neighbor_coord not in g_score or tentative_g < g_score[neighbor_coord]:
+                came_from[neighbor_coord] = current
+                g_score[neighbor_coord] = tentative_g
+                f_score[neighbor_coord] = tentative_g + heuristic(neighbor_coord, end)
+                if neighbor_coord not in visited and neighbor_coord not in open_list:
+                    open_list.append(neighbor_coord)
+
+    # Reconstruir camino
+    path = []
+    current = end
+    while current != start:
+        path.append(current)
+        current = came_from.get(current)
+        if current is None:
+            return [], visited
+    path.append(start)
+    path.reverse()
+    return path, visited

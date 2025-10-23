@@ -26,9 +26,9 @@ class MazeController:
             generate_maze_kruskal(self.maze)
         self.view.draw_maze(self.maze)
 
-    def solve_maze(self):
+    def solve_maze(self, algorithm):
         """
-        Resuelve el laberinto usando BFS y muestra el camino animado.
+        Resuelve el laberinto usando BFS o A* y muestra el camino animado.
         """
         if not self.maze:
             messagebox.showerror("Error", "Primero debes generar un laberinto antes de resolverlo.")
@@ -37,9 +37,15 @@ class MazeController:
         start = self.maze.entry
         end = self.maze.exit
 
-        path = solve_maze_bfs(self.maze, start, end)
+        # Selección de algoritmo
+        if algorithm == "ASTAR":
+            path, visited = solve_maze_astar(self.maze, start, end)
+            color = "#057032"
+        else:
+            path, visited = solve_maze_bfs(self.maze, start, end)
+            color = "#6909C8"
 
         if path:
-            self.view.draw_path_animated(path, delay=25)
+            self.view.draw_path_animated(path, delay=20, visited=visited, color=color)
         else:
             messagebox.showerror("Error", "No se encontró un camino entre la entrada y la salida.")
