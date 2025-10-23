@@ -24,6 +24,7 @@ class MazeController:
             generate_maze_dfs(self.maze)
         elif algorithm == "Kruskal":
             generate_maze_kruskal(self.maze)
+        self.maze.build_graph()
         self.view.draw_maze(self.maze)
 
     def solve_maze(self, algorithm):

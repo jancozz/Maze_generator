@@ -166,8 +166,9 @@ def solve_maze_bfs(maze, start, end):
     Resuelve el laberinto usando BFS.
     Devuelve una lista de coordenadas que forman el camino desde start hasta end.
     """
+    graph = maze.graph
     queue = [start]
-    visited = set()
+    visited = set([start])
     came_from = {}
     visited.add(start)
 
@@ -175,14 +176,13 @@ def solve_maze_bfs(maze, start, end):
         current = queue.pop(0)
         if current == end:
             break
-        x, y = current
-        cell = maze.grid[x][y]
-        for neighbor in maze.get_neighbors(cell):
-            nx, ny = neighbor.x, neighbor.y
-            if (nx, ny) not in visited:
-                visited.add((nx, ny))
-                came_from[(nx, ny)] = (x, y)
-                queue.append((nx, ny))
+        # x, y = current
+        # cell = maze.grid[x][y]
+        for neighbor in graph.neighbors(current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                came_from[neighbor] = current
+                queue.append(neighbor)
 
     # Reconstruir camino
     path = []
@@ -191,7 +191,7 @@ def solve_maze_bfs(maze, start, end):
         path.append(current)
         current = came_from.get(current)
         if current is None:
-            return []
+            return [], visited
     path.append(start)
     path.reverse()
     return path, visited
@@ -205,6 +205,7 @@ def solve_maze_astar(maze, start, end):
     def heuristic(a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
+    graph = maze.graph
     open_list = [start]
     came_from = {}
     g_score = {start: 0}
@@ -220,20 +221,14 @@ def solve_maze_astar(maze, start, end):
         if current == end:
             break
 
-        x, y = current
-        cell = maze.grid[x][y]
-
-        for neighbor in maze.get_neighbors(cell):
-            nx, ny = neighbor.x, neighbor.y
-            neighbor_coord = (nx, ny)
+        for neighbor in graph.neighbors(current):
             tentative_g = g_score[current] + 1
-
-            if neighbor_coord not in g_score or tentative_g < g_score[neighbor_coord]:
-                came_from[neighbor_coord] = current
-                g_score[neighbor_coord] = tentative_g
-                f_score[neighbor_coord] = tentative_g + heuristic(neighbor_coord, end)
-                if neighbor_coord not in visited and neighbor_coord not in open_list:
-                    open_list.append(neighbor_coord)
+            if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score[neighbor] = tentative_g + heuristic(neighbor, end)
+                if neighbor not in visited and neighbor not in open_list:
+                    open_list.append(neighbor)
 
     # Reconstruir camino
     path = []
