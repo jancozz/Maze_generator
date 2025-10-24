@@ -1,10 +1,12 @@
 import customtkinter as ctk
 
+
 class MazeView:
     """
     Vista gráfica del laberinto usando customtkinter.
     Dibuja la cuadrícula, botones de control y el camino resuelto.
     """
+
     def __init__(self, root, controller):
         """
         Inicializa la vista con canvas y controles.
@@ -13,6 +15,7 @@ class MazeView:
         self.controller = controller
         self.cell_size = 27
         self.margin = 15
+        self.mode = "maze"
 
         self.canvas = ctk.CTkCanvas(root, width=705, height=705, bg="#1e1e1e", highlightthickness=0)
         self.canvas.pack(pady=10)
@@ -20,9 +23,7 @@ class MazeView:
         self.setup_controls()
 
     def setup_controls(self):
-        """
-        Crea los botones de control para generar y resolver el laberinto.
-        """
+        """Crea los botones de control para generar y resolver el laberinto."""
         frame = ctk.CTkFrame(self.root)
         frame.pack(pady=10)
 
@@ -38,7 +39,7 @@ class MazeView:
 
         btn_bfs = ctk.CTkButton(
             frame, text="Resolver (BFS)",
-            command=lambda: self.controller.solve_maze(""),
+            command=lambda: self.controller.solve_maze("BFS"),
             **button_style
         )
         btn_bfs.grid(row=0, column=1, padx=8, pady=5)
@@ -72,47 +73,86 @@ class MazeView:
         )
         btn_maze.grid(row=1, column=2, padx=8, pady=5)
 
-    def draw_maze(self, maze):
+    def draw_maze(self, graph):
         """
-        Dibuja las paredes del laberinto en el canvas.
+        Dibuja el laberinto en el canvas, construyendo paredes según las adyacencias del grafo.
         """
         self.canvas.delete("all")
-        for x in range(maze.width):
-            for y in range(maze.height):
-                cell = maze.grid[x][y]
+        wall_color = "#cccccc"
+
+        for x in range(graph.width):
+            for y in range(graph.height):
+                node = (x, y)
+                neighbors = graph.adjacency.get(node, [])
                 x1 = x * self.cell_size + self.margin
                 y1 = y * self.cell_size + self.margin
                 x2 = x1 + self.cell_size
                 y2 = y1 + self.cell_size
 
-                wall_color = "#cccccc"
-                if cell.walls['N']:
+                # Pared superior
+                if (x, y - 1) not in neighbors:
                     self.canvas.create_line(x1, y1, x2, y1, width=2, fill=wall_color)
-                if cell.walls['S']:
+                # Pared inferior
+                if (x, y + 1) not in neighbors:
                     self.canvas.create_line(x1, y2, x2, y2, width=2, fill=wall_color)
-                if cell.walls['E']:
+                # Pared derecha
+                if (x + 1, y) not in neighbors:
                     self.canvas.create_line(x2, y1, x2, y2, width=2, fill=wall_color)
-                if cell.walls['W']:
+                # Pared izquierda
+                if (x - 1, y) not in neighbors:
                     self.canvas.create_line(x1, y1, x1, y2, width=2, fill=wall_color)
 
-        # Flecha de entrada
-        ex, ey = maze.entry
-        ey_center = ey * self.cell_size + self.margin + self.cell_size // 2
-        x_start = ex * self.cell_size + self.margin - 5
-        x_end = ex * self.cell_size + self.margin + 10
-        self.canvas.create_line(x_start, ey_center, x_end, ey_center, fill="red", width=3, arrow="last")
+        # Dibujar aperturas (roturas) en entrada y salida
+        if graph.entry:
+            self._draw_opening(graph.entry, graph.width, graph.height)
 
-        # Flecha de salida
-        sx, sy = maze.exit
-        sy_center = sy * self.cell_size + self.margin + self.cell_size // 2
-        x_start = sx * self.cell_size + self.margin + self.cell_size - 5
-        x_end = sx * self.cell_size + self.margin + self.cell_size + 10
-        self.canvas.create_line(x_start, sy_center, x_end, sy_center, fill="red", width=3, arrow="last")
+        if graph.exit:
+            self._draw_opening(graph.exit, graph.width, graph.height)
+
+        # Dibujar flechas de entrada/salida
+        self._draw_entry_exit_arrows(graph)
+
+    def _draw_opening(self, node, width, height):
+        """Rompe la pared del borde en la entrada o salida."""
+        x, y = node
+        x1 = x * self.cell_size + self.margin
+        y1 = y * self.cell_size + self.margin
+        x2 = x1 + self.cell_size
+        y2 = y1 + self.cell_size
+
+        if x == 0:
+            # Quitar parte de la pared izquierda
+            self.canvas.create_line(x1, y1, x1, y2, fill="#1e1e1e", width=3)
+        elif x == width - 1:
+            # Quitar parte de la pared derecha
+            self.canvas.create_line(x2, y1, x2, y2, fill="#1e1e1e", width=3)
+        elif y == 0:
+            # Quitar parte de la pared superior
+            self.canvas.create_line(x1, y1, x2, y1, fill="#1e1e1e", width=3)
+        elif y == height - 1:
+            # Quitar parte de la pared inferior
+            self.canvas.create_line(x1, y2, x2, y2, fill="#1e1e1e", width=3)
+
+    def _draw_entry_exit_arrows(self, graph):
+        """Dibuja las flechas de entrada y salida en los bordes."""
+        # Entrada
+        if graph.entry:
+            ex, ey = graph.entry
+            ey_center = ey * self.cell_size + self.margin + self.cell_size // 2
+            x_start = ex * self.cell_size + self.margin - 5
+            x_end = ex * self.cell_size + self.margin + 10
+            self.canvas.create_line(x_start, ey_center, x_end, ey_center, fill="red", width=3, arrow="last")
+
+        # Salida
+        if graph.exit:
+            sx, sy = graph.exit
+            sy_center = sy * self.cell_size + self.margin + self.cell_size // 2
+            x_start = sx * self.cell_size + self.margin + self.cell_size - 5
+            x_end = sx * self.cell_size + self.margin + self.cell_size + 10
+            self.canvas.create_line(x_start, sy_center, x_end, sy_center, fill="red", width=3, arrow="last")
 
     def draw_path_animated(self, path, delay, visited=None, color="#057032"):
-        """
-        Dibuja el camino como una línea animada que crece paso a paso.
-        """
+        """Dibuja el camino como una línea animada que crece paso a paso."""
 
         def draw_step(index):
             if index == 0:
@@ -136,14 +176,12 @@ class MazeView:
         draw_step(0)
 
     def draw_graph(self, graph):
-        """
-        Dibuja el grafo del laberinto con nodos y aristas.
-        """
+        """Dibuja el grafo del laberinto con nodos y aristas."""
         self.canvas.delete("all")
-
         node_radius = 5
         link_color = "#CFCFCF"
-        node_color = "#696969"
+        default_node_color = "#696969"
+        entry_exit_color = "#FF0000"
 
         for node, neighbors in graph.adjacency.items():
             x1 = node[0] * self.cell_size + self.margin + self.cell_size // 2
@@ -156,6 +194,13 @@ class MazeView:
         for node in graph.adjacency.keys():
             x = node[0] * self.cell_size + self.margin + self.cell_size // 2
             y = node[1] * self.cell_size + self.margin + self.cell_size // 2
+
+            # Determinar color: rojo si es entrada o salida
+            if node == graph.entry or node == graph.exit:
+                node_color = entry_exit_color
+            else:
+                node_color = default_node_color
+
             self.canvas.create_oval(
                 x - node_radius, y - node_radius,
                 x + node_radius, y + node_radius,
@@ -164,12 +209,12 @@ class MazeView:
 
     def show_graph(self):
         """Cambia a modo visualización de grafo."""
-        if self.controller.maze:
+        if self.controller.graph:
             self.mode = "graph"
-            self.draw_graph(self.controller.maze.graph)
+            self.draw_graph(self.controller.graph)
 
     def show_maze(self):
         """Cambia a modo visualización de laberinto."""
-        if self.controller.maze:
+        if self.controller.graph:
             self.mode = "maze"
-            self.draw_maze(self.controller.maze)
+            self.draw_maze(self.controller.graph)

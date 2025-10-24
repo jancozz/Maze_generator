@@ -1,190 +1,112 @@
 import random
 
+
 class DisjointSet:
-    """
-    Estructura de conjuntos disjuntos para Kruskal.
-    Permite unir celdas y verificar si están conectadas sin formar ciclos.
-    """
+    """Estructura de conjuntos disjuntos para el algoritmo de Kruskal."""
 
     def __init__(self, width, height):
-        """
-        Inicializa cada celda como su propio conjunto.
-        """
         self.parent = {(x, y): (x, y) for x in range(width) for y in range(height)}
 
-    def find(self, cell):
-        """
-        Encuentra el representante del conjunto al que pertenece la celda.
-        Aplica compresión de caminos.
-        """
-        if self.parent[cell] != cell:
-            self.parent[cell] = self.find(self.parent[cell])
-        return self.parent[cell]
+    def find(self, node):
+        if self.parent[node] != node:
+            self.parent[node] = self.find(self.parent[node])
+        return self.parent[node]
 
-    def union(self, cell1, cell2):
-        """
-        Une dos conjuntos si no están conectados.
-        Retorna True si se realizó la unión.
-        """
-        root1 = self.find(cell1)
-        root2 = self.find(cell2)
+    def union(self, node1, node2):
+        root1 = self.find(node1)
+        root2 = self.find(node2)
         if root1 != root2:
             self.parent[root2] = root1
             return True
         return False
 
-def open_border_wall(maze, cell):
-    """
-    Abre la pared correspondiente si la celda está en el borde.
-    """
-    x, y = cell
-    if x == 0:
-        maze.grid[x][y].walls['W'] = False
-    elif x == maze.width - 1:
-        maze.grid[x][y].walls['E'] = False
-    elif y == 0:
-        maze.grid[x][y].walls['N'] = False
-    elif y == maze.height - 1:
-        maze.grid[x][y].walls['S'] = False
 
-def assign_entry_exit(maze):
-    """
-    Asigna entrada y salida aleatorias con preferencia de izquierda a derecha.
-    """
-    entry_candidates = [(0, y) for y in range(maze.height)]
-    exit_candidates = [(maze.width - 1, y) for y in range(maze.height)]
+def assign_entry_exit(graph):
+    """Asigna entrada y salida aleatorias (preferencia izquierda → derecha)."""
+    entry_candidates = [(0, y) for y in range(graph.height)]
+    exit_candidates = [(graph.width - 1, y) for y in range(graph.height)]
 
-    entry = random.choice(entry_candidates)
-    exit = random.choice(exit_candidates)
+    graph.entry = random.choice(entry_candidates)
+    graph.exit = random.choice(exit_candidates)
 
-    open_border_wall(maze, entry)
-    open_border_wall(maze, exit)
 
-    maze.entry = entry
-    maze.exit = exit
-
-def generate_maze_dfs(maze):
-    """
-    Genera un laberinto usando DFS recursivo.
-    Elimina paredes entre celdas visitadas y define entrada/salida.
-    """
-    width, height = maze.width, maze.height
-    visited = [[False for _ in range(height)] for _ in range(width)]
+def generate_maze_dfs(graph):
+    """Genera un laberinto usando DFS recursivo directamente sobre el grafo."""
+    width, height = graph.width, graph.height
+    visited = set()
+    directions = [(0, -1), (0, 1), (1, 0), (-1, 0)]
 
     def dfs(x, y):
-        visited[x][y] = True
-        directions = ['N', 'S', 'E', 'W']
+        visited.add((x, y))
         random.shuffle(directions)
-
-        for direction in directions:
-            dx, dy = 0, 0
-            if direction == 'N':
-                dy = -1
-            elif direction == 'S':
-                dy = 1
-            elif direction == 'E':
-                dx = 1
-            elif direction == 'W':
-                dx = -1
-
+        for dx, dy in directions:
             nx, ny = x + dx, y + dy
-            if 0 <= nx < width and 0 <= ny < height and not visited[nx][ny]:
-                # Eliminar pared entre (x,y) y (nx,ny)
-                maze.grid[x][y].walls[direction] = False
-                opposite = {'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}
-                maze.grid[nx][ny].walls[opposite[direction]] = False
+            if 0 <= nx < width and 0 <= ny < height and (nx, ny) not in visited:
+                graph.add_edge((x, y), (nx, ny))
                 dfs(nx, ny)
 
-    def add_extra_passages(maze, count):
-        for _ in range(count):
-            x = random.randint(0, width - 2)
-            y = random.randint(0, height - 2)
-            direction = random.choice(['E', 'S'])
-            dx, dy = 1 if direction == 'E' else 0, 1 if direction == 'S' else 0
-            nx, ny = x + dx, y + dy
+    # Comienza desde una celda aleatoria
+    start = (random.randint(0, width - 1), random.randint(0, height - 1))
+    dfs(*start)
 
-            cell1 = maze.grid[x][y]
-            cell2 = maze.grid[nx][ny]
+    add_extra_passages(graph, ratio=0.5)
+    assign_entry_exit(graph)
 
-            if cell1.walls[direction]:
-                cell1.walls[direction] = False
-                opposite = {'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}
-                cell2.walls[opposite[direction]] = False
 
-    # Comenzar desde una celda aleatoria
-    start_x = random.randint(0, width - 1)
-    start_y = random.randint(0, height - 1)
-    dfs(start_x, start_y)
-
-    extra = int(width * height * 0.40)
-    add_extra_passages(maze, count=extra)
-    assign_entry_exit(maze)
-
-def generate_maze_kruskal(maze):
-    """
-    Genera un laberinto usando el algoritmo de Kruskal.
-    Une celdas aleatoriamente sin formar ciclos.
-    """
-    width, height = maze.width, maze.height
+def generate_maze_kruskal(graph):
+    """Genera un laberinto usando el algoritmo de Kruskal directamente sobre el grafo."""
+    width, height = graph.width, graph.height
     ds = DisjointSet(width, height)
     edges = []
 
     for x in range(width):
         for y in range(height):
             if x < width - 1:
-                edges.append(((x, y), (x + 1, y), 'E'))
+                edges.append(((x, y), (x + 1, y)))
             if y < height - 1:
-                edges.append(((x, y), (x, y + 1), 'S'))
+                edges.append(((x, y), (x, y + 1)))
 
     random.shuffle(edges)
 
-    for cell1, cell2, direction in edges:
-        if ds.union(cell1, cell2):
-            x1, y1 = cell1
-            x2, y2 = cell2
-            maze.grid[x1][y1].walls[direction] = False
-            maze.grid[x2][y2].walls[{'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}[direction]] = False
+    for a, b in edges:
+        if ds.union(a, b):
+            graph.add_edge(a, b)
 
-    def add_extra_edges(maze, edges, count):
-        added = 0
-        for cell1, cell2, direction in edges:
-            if added >= count:
-                break
-            x1, y1 = cell1
-            x2, y2 = cell2
-            if maze.grid[x1][y1].walls[direction]:
-                maze.grid[x1][y1].walls[direction] = False
-                maze.grid[x2][y2].walls[{'N': 'S', 'S': 'N', 'E': 'W', 'W': 'E'}[direction]] = False
-                added += 1
+    add_extra_passages(graph, ratio=0.3)
+    assign_entry_exit(graph)
 
-    extra = int(width * height * 0.20)
-    add_extra_edges(maze, edges, count=extra)
-    assign_entry_exit(maze)
 
-def solve_maze_bfs(maze, start, end):
-    """
-    Resuelve el laberinto usando BFS.
-    Devuelve una lista de coordenadas que forman el camino desde start hasta end.
-    """
-    graph = maze.graph
+def add_extra_passages(graph, ratio):
+    """Agrega pasajes extra aleatorios para aumentar conectividad."""
+    count = int(graph.width * graph.height * ratio)
+    for _ in range(count):
+        x = random.randint(0, graph.width - 2)
+        y = random.randint(0, graph.height - 2)
+        if random.choice([True, False]):
+            neighbor = (x + 1, y)
+        else:
+            neighbor = (x, y + 1)
+        graph.add_edge((x, y), neighbor)
+
+
+def solve_maze_bfs(graph, start, end):
+    """Resuelve el laberinto usando BFS."""
     queue = [start]
-    visited = set([start])
+    visited = {start}
     came_from = {}
-    visited.add(start)
 
     while queue:
         current = queue.pop(0)
         if current == end:
             break
-        # x, y = current
-        # cell = maze.grid[x][y]
+
         for neighbor in graph.neighbors(current):
             if neighbor not in visited:
                 visited.add(neighbor)
                 came_from[neighbor] = current
                 queue.append(neighbor)
 
-    # Reconstruir camino
+    # Reconstrucción del camino
     path = []
     current = end
     while current != start:
@@ -196,16 +118,13 @@ def solve_maze_bfs(maze, start, end):
     path.reverse()
     return path, visited
 
-def solve_maze_astar(maze, start, end):
-    """
-    Resuelve el laberinto usando A*.
-    Devuelve una lista de coordenadas que forman el camino desde start hasta end.
-    """
+
+def solve_maze_astar(graph, start, end):
+    """Resuelve el laberinto usando el algoritmo A*."""
 
     def heuristic(a, b):
-        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])  # Distancia Manhattan
 
-    graph = maze.graph
     open_list = [start]
     came_from = {}
     g_score = {start: 0}
@@ -213,7 +132,6 @@ def solve_maze_astar(maze, start, end):
     visited = set()
 
     while open_list:
-        # Seleccionar nodo con menor f_score
         current = min(open_list, key=lambda c: f_score.get(c, float('inf')))
         open_list.remove(current)
         visited.add(current)
@@ -230,7 +148,7 @@ def solve_maze_astar(maze, start, end):
                 if neighbor not in visited and neighbor not in open_list:
                     open_list.append(neighbor)
 
-    # Reconstruir camino
+    # Reconstrucción del camino
     path = []
     current = end
     while current != start:
