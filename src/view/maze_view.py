@@ -37,7 +37,7 @@ class MazeView:
         self.info_label = ctk.CTkLabel(
             root,
             text="Genera un laberinto para comenzar",
-            font=("Arial", 12)
+            font=("Arial", 13)
         )
         self.info_label.pack(pady=5)
 
@@ -48,7 +48,7 @@ class MazeView:
             bg="#1e1e1e",
             highlightthickness=0
         )
-        self.canvas.pack(pady=10)
+        self.canvas.pack(pady=(0, 10))
 
         self.setup_controls()
 
@@ -110,13 +110,20 @@ class MazeView:
         canvas_width = width * self.cell_size + self.margin * 2
         canvas_height = height * self.cell_size + self.margin * 2
 
-        #Redimensionar canvas
+        # Redimensionar canvas
         self.canvas.configure(width=canvas_width, height=canvas_height)
 
-        #Ajustar tamaño de ventana para que se centre bien
+        # Ajustar tamaño de ventana centrada
         window_width = canvas_width + 30
-        window_height = canvas_height + 180
-        self.root.geometry(f"{window_width}x{window_height}")
+        window_height = canvas_height + 165
+
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        x_position = int((screen_width - window_width) / 2)
+        y_position = int((screen_height - window_height) * 0.25)
+
+        self.root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
 
     def start_play(self):
         """Inicia el juego con la dificultad seleccionada."""
