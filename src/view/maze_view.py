@@ -18,8 +18,8 @@ class MazeView:
         self.margin = 15
         self.difficulties = {
             "Fácil": {"size": (25, 25), "passages": 0.5},
-            "Intermedio": {"size": (30, 30), "passages": 0.35},
-            "Difícil": {"size": (40, 30), "passages": 0.2}
+            "Intermedio": {"size": (35, 25), "passages": 0.30},
+            "Difícil": {"size": (40, 30), "passages": 0.15}
         }
         self.current_difficulty = "Fácil"
 
