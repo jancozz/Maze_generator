@@ -34,6 +34,10 @@ class MazeView:
         self.manual_path = []
         self.player_marker = None
 
+        # Sistema de sonido
+        self.sound_enabled = True
+        self.init_sound_system()
+
         self.info_label = ctk.CTkLabel(
             root,
             text="Genera un laberinto para comenzar",
@@ -58,6 +62,43 @@ class MazeView:
         self.root.bind('<Left>', lambda e: self.move_player(-1, 0))
         self.root.bind('<Right>', lambda e: self.move_player(1, 0))
 
+    def init_sound_system(self):
+        """Inicializa el sistema de sonido."""
+        try:
+            import winsound
+            self.winsound = winsound
+            self.use_winsound = True
+        except ImportError:
+            self.use_winsound = False
+            print("winsound no disponible. Sonidos desactivados.")
+
+    def play_sound(self, sound_type):
+        """
+        Reproduce un sonido según el tipo.
+        Tipos: 'move', 'wall', 'victory'
+        """
+        if not self.sound_enabled or not self.use_winsound:
+            return
+
+        try:
+            sounds = {
+                'move': (450, 50),  # Movimiento
+                'wall': (200, 100),  # Choque con pared
+            }
+
+            if sound_type == 'victory':
+                # Melodía de victoria (4 notas ascendentes)
+                self.root.after(0, lambda: self.winsound.Beep(523, 100))  # Do
+                self.root.after(120, lambda: self.winsound.Beep(659, 100))  # Mi
+                self.root.after(240, lambda: self.winsound.Beep(784, 100))  # Sol
+                self.root.after(360, lambda: self.winsound.Beep(1047, 300))  # Do alto
+            elif sound_type in sounds:
+                freq, duration = sounds[sound_type]
+                self.winsound.Beep(freq, duration)
+        except Exception as e:
+            # Silenciosamente ignorar errores de sonido
+            pass
+
     def setup_controls(self):
         """Crea los botones de control para generar y resolver el laberinto."""
         frame = ctk.CTkFrame(self.root)
@@ -75,7 +116,7 @@ class MazeView:
         difficulty_selector.set("Fácil")
         difficulty_selector.grid(row=0, column=0, columnspan=3, padx=8, pady=5)
 
-        #FILA 2: Botones de juego
+        # FILA 2: Botones de juego
         btn_new = ctk.CTkButton(
             frame, text="Nuevo Laberinto",
             command=self.start_play,
@@ -131,7 +172,7 @@ class MazeView:
         width, height = config["size"]
         passages_ratio = config["passages"]
 
-        #Ajustar canvas antes de generar
+        # Ajustar canvas antes de generar
         self.resize_canvas(width, height)
 
         self.controller.generate_maze(width, height, passages_ratio)
@@ -288,6 +329,9 @@ class MazeView:
             self.player_position = new_position
             self.manual_path.append(new_position)
 
+            # Sonido de movimiento
+            self.play_sound('move')
+
             # Redibujar
             self.draw_maze(self.controller.graph)
             self.draw_manual_path()
@@ -295,7 +339,10 @@ class MazeView:
 
             # Verificar si llegó a la salida
             if self.player_position == self.controller.graph.exit:
-                messagebox.showinfo("¡Lo lograste!", "Has llegado a la salida del laberinto")
+                # Sonido de victoria
+                self.play_sound('victory')
+
+                messagebox.showinfo("¡Felicitaciones!", "¡Completaste el laberinto!")
                 self.update_info(
                     f"Completado en {len(self.manual_path) - 1} movimientos"
                 )
@@ -306,8 +353,11 @@ class MazeView:
                 )
         else:
             # Movimiento inválido (hay pared)
+            self.play_sound('wall')  # Sonido de pared
+            canvas_width = self.controller.graph.width * self.cell_size + self.margin * 2
+            canvas_height = self.controller.graph.height * self.cell_size + self.margin * 2
             self.canvas.create_rectangle(
-                0, 0, 705, 705,
+                0, 0, canvas_width, canvas_height,
                 fill="", outline="#FF0000", width=5, tags="invalid"
             )
             self.root.after(100, lambda: self.canvas.delete("invalid"))
