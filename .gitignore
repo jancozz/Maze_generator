@@ -180,3 +180,4 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .idea/vcs.xml
+.idea/material_theme_project_new.xml
