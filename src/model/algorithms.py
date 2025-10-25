@@ -1,4 +1,6 @@
+import heapq
 import random
+from collections import deque
 
 
 class DisjointSet:
@@ -6,17 +8,26 @@ class DisjointSet:
 
     def __init__(self, width, height):
         self.parent = {(x, y): (x, y) for x in range(width) for y in range(height)}
+        self.rank = {(x, y): 0 for x in range(width) for y in range(height)}
 
     def find(self, node):
+        """Find con compresión de caminos para mejor rendimiento."""
         if self.parent[node] != node:
             self.parent[node] = self.find(self.parent[node])
         return self.parent[node]
 
     def union(self, node1, node2):
+        """Union por rango para árboles más balanceados."""
         root1 = self.find(node1)
         root2 = self.find(node2)
         if root1 != root2:
-            self.parent[root2] = root1
+            if self.rank[root1] < self.rank[root2]:
+                self.parent[root1] = root2
+            elif self.rank[root1] > self.rank[root2]:
+                self.parent[root2] = root1
+            else:
+                self.parent[root2] = root1
+                self.rank[root1] += 1
             return True
         return False
 
@@ -59,6 +70,7 @@ def generate_maze_kruskal(graph):
     ds = DisjointSet(width, height)
     edges = []
 
+    # Generar todas las aristas posibles
     for x in range(width):
         for y in range(height):
             if x < width - 1:
@@ -68,6 +80,7 @@ def generate_maze_kruskal(graph):
 
     random.shuffle(edges)
 
+    # Construir MST
     for a, b in edges:
         if ds.union(a, b):
             graph.add_edge(a, b)
@@ -90,13 +103,15 @@ def add_extra_passages(graph, ratio):
 
 
 def solve_maze_bfs(graph, start, end):
-    """Resuelve el laberinto usando BFS."""
-    queue = [start]
+    """
+    Resuelve el laberinto usando BFS.
+    """
+    queue = deque([start])
     visited = {start}
     came_from = {}
 
     while queue:
-        current = queue.pop(0)
+        current = queue.popleft()
         if current == end:
             break
 
@@ -125,28 +140,41 @@ def solve_maze_astar(graph, start, end):
     def heuristic(a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])  # Distancia Manhattan
 
-    open_list = [start]
+    open_heap = []
+    heapq.heappush(open_heap, (heuristic(start, end), start))
+
     came_from = {}
     g_score = {start: 0}
     f_score = {start: heuristic(start, end)}
     visited = set()
+    in_open = {start}
 
-    while open_list:
-        current = min(open_list, key=lambda c: f_score.get(c, float('inf')))
-        open_list.remove(current)
+    while open_heap:
+        _, current = heapq.heappop(open_heap)
+        in_open.discard(current)
+
+        if current in visited:
+            continue
+
         visited.add(current)
 
         if current == end:
             break
 
         for neighbor in graph.neighbors(current):
+            if neighbor in visited:
+                continue
+
             tentative_g = g_score[current] + 1
+
             if neighbor not in g_score or tentative_g < g_score[neighbor]:
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
                 f_score[neighbor] = tentative_g + heuristic(neighbor, end)
-                if neighbor not in visited and neighbor not in open_list:
-                    open_list.append(neighbor)
+
+                if neighbor not in in_open:
+                    heapq.heappush(open_heap, (f_score[neighbor], neighbor))
+                    in_open.add(neighbor)
 
     # Reconstrucción del camino
     path = []
