@@ -1,18 +1,6 @@
 import customtkinter as ctk
-import sys
-import os
-
-#Agregar la carpeta src al path para que funcione en ejecutable
-if getattr(sys, 'frozen', False):
-    # Si es ejecutable
-    application_path = sys._MEIPASS
-else:
-    # Si es desarrollo
-    application_path = os.path.dirname(os.path.abspath(__file__))
-
-sys.path.insert(0, application_path)
-
 from controller.maze_controller import MazeController
+
 
 def main():
     """Función principal que inicia la aplicación."""

@@ -29,6 +29,3 @@ class Graph:
 
     def nodes(self):
         return list(self.adjacency.keys())
-
-    def __repr__(self):
-        return f"Graph({self.width}x{self.height}, {len(self.adjacency)} nodos)"

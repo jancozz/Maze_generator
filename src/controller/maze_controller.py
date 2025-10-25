@@ -1,5 +1,4 @@
 from tkinter import messagebox
-import time
 from model.graph import Graph
 from model.algorithms import (
     generate_maze_dfs, generate_maze_kruskal,
@@ -18,25 +17,22 @@ class MazeController:
     def generate_maze(self, width, height, algorithm):
         """Genera un nuevo laberinto (DFS, Kruskal o Prim)."""
         self.graph = Graph(width, height)
-        algorithm = algorithm.upper()
 
         self.view.update_info(f"Generando laberinto con {algorithm}...")
-        start_time = time.time()
 
         if algorithm == "DFS":
             generate_maze_dfs(self.graph)
-        elif algorithm == "KRUSKAL":
+        elif algorithm == "Kruskal":
             generate_maze_kruskal(self.graph)
         else:
             messagebox.showerror("Error", f"Algoritmo '{algorithm}' no soportado.")
             return
 
-        elapsed = time.time() - start_time
         self.view.draw_maze(self.graph)
 
         nodes = len(self.graph.nodes())
         edges = sum(len(v) for v in self.graph.adjacency.values()) // 2
-        self.view.update_info(f"Laberinto generado con {algorithm} en {elapsed:.3f}s | {nodes} nodos, {edges} aristas")
+        self.view.update_info(f"Laberinto generado con {algorithm}  | {nodes} nodos, {edges} aristas")
 
     def solve_maze(self, algorithm):
         """Resuelve el laberinto con BFS, A* o Dijkstra."""
@@ -59,7 +55,6 @@ class MazeController:
             self.view.draw_graph(self.graph)
 
         self.view.update_info(f"Resolviendo con {algorithm}...")
-        start_time = time.time()
 
         if algorithm == "ASTAR":
             path, visited = solve_maze_astar(self.graph, start, end)
@@ -72,8 +67,6 @@ class MazeController:
         else:
             messagebox.showerror("Error", f"Algoritmo de resolución no soportado: {algorithm}")
             return
-
-        elapsed = time.time() - start_time
 
         if path:
             self.view.update_info(f"Resolviendo con {algo_name}...")
