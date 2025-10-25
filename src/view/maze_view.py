@@ -1,8 +1,6 @@
 from tkinter import messagebox
 
 import customtkinter as ctk
-import sys
-import os
 
 
 class MazeView:
@@ -21,7 +19,7 @@ class MazeView:
         self.margin = 15
         self.mode = "maze"
 
-        #Variables para modo manual
+        # Variables para modo manual
         self.manual_mode = False
         self.player_position = None
         self.manual_path = []
@@ -45,7 +43,7 @@ class MazeView:
 
         self.setup_controls()
 
-        #Vincular teclas para modo manual
+        # Vincular teclas para modo manual
         self.root.bind('<Up>', lambda e: self.move_player(0, -1))
         self.root.bind('<Down>', lambda e: self.move_player(0, 1))
         self.root.bind('<Left>', lambda e: self.move_player(-1, 0))
@@ -329,12 +327,12 @@ class MazeView:
 
     def reset_manual_mode(self):
         """Reinicia el modo manual."""
-        #Validar que haya un laberinto generado
+        # Validar que haya un laberinto generado
         if not self.controller.graph:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
             return
 
-        #Validar que esté en modo manual
+        # Validar que esté en modo manual
         if not self.manual_mode:
             messagebox.showerror(
                 "Error",
