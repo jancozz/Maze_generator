@@ -11,7 +11,7 @@ def assign_entry_exit(graph):
     graph.exit = random.choice(exit_candidates)
 
 
-def generate_maze_dfs(graph):
+def generate_maze_dfs(graph, passages_ratio):
     """Genera un laberinto usando DFS recursivo directamente sobre el grafo."""
     width, height = graph.width, graph.height
     visited = set()
@@ -30,7 +30,7 @@ def generate_maze_dfs(graph):
     start = (random.randint(0, width - 1), random.randint(0, height - 1))
     dfs(*start)
 
-    add_extra_passages(graph, ratio=0.5)
+    add_extra_passages(graph, ratio=passages_ratio)
     assign_entry_exit(graph)
 
 

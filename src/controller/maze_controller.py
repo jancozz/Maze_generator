@@ -14,13 +14,13 @@ class MazeController:
         self.graph = None
         self.view = MazeView(root, self)
 
-    def generate_maze(self, width, height):
+    def generate_maze(self, width, height, passages_ratio):
         """Genera un nuevo laberinto."""
         self.graph = Graph(width, height)
 
         self.view.update_info(f"Generando laberinto...")
 
-        generate_maze_dfs(self.graph)
+        generate_maze_dfs(self.graph, passages_ratio)
 
         self.view.draw_maze(self.graph)
         self.view.update_info(f"Laberinto generado")
@@ -39,8 +39,6 @@ class MazeController:
             return
 
         self.view.draw_maze(self.graph)
-
-        self.view.update_info(f"Resolviendo laberinto...")
 
         path, visited = solve_maze_astar(self.graph, start, end)
         color = "#057032"

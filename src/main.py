@@ -13,8 +13,7 @@ def main():
     root = ctk.CTk()
     root.title("Generador y Solucionador de Laberintos")
     root.geometry(
-        f"{730}x{880}+{int(root.winfo_screenwidth() / 2 - 365)}+{int(root.winfo_screenheight() / 2 - 480)}")
-    root.resizable(False, False)
+        f"{685}x{835}+{int(root.winfo_screenwidth() / 2 - 365)}+{int(root.winfo_screenheight() / 2 - 510)}")
 
     # Crear controlador (esto inicializa toda la aplicación)
     controller = MazeController(root)
