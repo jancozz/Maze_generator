@@ -1,35 +1,5 @@
 import heapq
 import random
-from collections import deque
-
-
-class DisjointSet:
-    """Estructura de conjuntos disjuntos para el algoritmo de Kruskal."""
-
-    def __init__(self, width, height):
-        self.parent = {(x, y): (x, y) for x in range(width) for y in range(height)}
-        self.rank = {(x, y): 0 for x in range(width) for y in range(height)}
-
-    def find(self, node):
-        """Find con compresión de caminos para mejor rendimiento."""
-        if self.parent[node] != node:
-            self.parent[node] = self.find(self.parent[node])
-        return self.parent[node]
-
-    def union(self, node1, node2):
-        """Union por rango para árboles más balanceados."""
-        root1 = self.find(node1)
-        root2 = self.find(node2)
-        if root1 != root2:
-            if self.rank[root1] < self.rank[root2]:
-                self.parent[root1] = root2
-            elif self.rank[root1] > self.rank[root2]:
-                self.parent[root2] = root1
-            else:
-                self.parent[root2] = root1
-                self.rank[root1] += 1
-            return True
-        return False
 
 
 def assign_entry_exit(graph):
@@ -64,31 +34,6 @@ def generate_maze_dfs(graph):
     assign_entry_exit(graph)
 
 
-def generate_maze_kruskal(graph):
-    """Genera un laberinto usando el algoritmo de Kruskal directamente sobre el grafo."""
-    width, height = graph.width, graph.height
-    ds = DisjointSet(width, height)
-    edges = []
-
-    # Generar todas las aristas posibles
-    for x in range(width):
-        for y in range(height):
-            if x < width - 1:
-                edges.append(((x, y), (x + 1, y)))
-            if y < height - 1:
-                edges.append(((x, y), (x, y + 1)))
-
-    random.shuffle(edges)
-
-    # Construir MST
-    for a, b in edges:
-        if ds.union(a, b):
-            graph.add_edge(a, b)
-
-    add_extra_passages(graph, ratio=0.3)
-    assign_entry_exit(graph)
-
-
 def add_extra_passages(graph, ratio):
     """Agrega pasajes extra aleatorios para aumentar conectividad."""
     count = int(graph.width * graph.height * ratio)
@@ -100,38 +45,6 @@ def add_extra_passages(graph, ratio):
         else:
             neighbor = (x, y + 1)
         graph.add_edge((x, y), neighbor)
-
-
-def solve_maze_bfs(graph, start, end):
-    """
-    Resuelve el laberinto usando BFS.
-    """
-    queue = deque([start])
-    visited = {start}
-    came_from = {}
-
-    while queue:
-        current = queue.popleft()
-        if current == end:
-            break
-
-        for neighbor in graph.neighbors(current):
-            if neighbor not in visited:
-                visited.add(neighbor)
-                came_from[neighbor] = current
-                queue.append(neighbor)
-
-    # Reconstrucción del camino
-    path = []
-    current = end
-    while current != start:
-        path.append(current)
-        current = came_from.get(current)
-        if current is None:
-            return [], visited
-    path.append(start)
-    path.reverse()
-    return path, visited
 
 
 def solve_maze_astar(graph, start, end):

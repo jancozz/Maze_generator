@@ -1,8 +1,8 @@
 from tkinter import messagebox
 from model.graph import Graph
 from model.algorithms import (
-    generate_maze_dfs, generate_maze_kruskal,
-    solve_maze_bfs, solve_maze_astar
+    generate_maze_dfs,
+    solve_maze_astar
 )
 from view.maze_view import MazeView
 
@@ -14,28 +14,19 @@ class MazeController:
         self.graph = None
         self.view = MazeView(root, self)
 
-    def generate_maze(self, width, height, algorithm):
-        """Genera un nuevo laberinto (DFS, Kruskal o Prim)."""
+    def generate_maze(self, width, height):
+        """Genera un nuevo laberinto."""
         self.graph = Graph(width, height)
 
-        self.view.update_info(f"Generando laberinto con {algorithm}...")
+        self.view.update_info(f"Generando laberinto...")
 
-        if algorithm == "DFS":
-            generate_maze_dfs(self.graph)
-        elif algorithm == "Kruskal":
-            generate_maze_kruskal(self.graph)
-        else:
-            messagebox.showerror("Error", f"Algoritmo '{algorithm}' no soportado.")
-            return
+        generate_maze_dfs(self.graph)
 
         self.view.draw_maze(self.graph)
+        self.view.update_info(f"Laberinto generado")
 
-        nodes = len(self.graph.nodes())
-        edges = sum(len(v) for v in self.graph.adjacency.values()) // 2
-        self.view.update_info(f"Laberinto generado con {algorithm} | {nodes} nodos, {edges} aristas")
-
-    def solve_maze(self, algorithm):
-        """Resuelve el laberinto con BFS, A* o Dijkstra."""
+    def solve_maze(self):
+        """Resuelve el laberinto"""
         if not self.graph:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
             return
@@ -47,28 +38,16 @@ class MazeController:
             messagebox.showerror("Error", "El laberinto no tiene puntos de entrada o salida.")
             return
 
-        if self.view.mode == "maze":
-            self.view.draw_maze(self.graph)
-        else:
-            self.view.draw_graph(self.graph)
+        self.view.draw_maze(self.graph)
 
-        self.view.update_info(f"Resolviendo con {algorithm}...")
+        self.view.update_info(f"Resolviendo laberinto...")
 
-        if algorithm == "ASTAR":
-            path, visited = solve_maze_astar(self.graph, start, end)
-            color = "#057032"
-            algo_name = "A*"
-        elif algorithm == "BFS":
-            path, visited = solve_maze_bfs(self.graph, start, end)
-            color = "#6909C8"
-            algo_name = "BFS"
-        else:
-            messagebox.showerror("Error", f"Algoritmo de resolución no soportado: {algorithm}")
-            return
+        path, visited = solve_maze_astar(self.graph, start, end)
+        color = "#057032"
 
         if path:
-            self.view.update_info(f"Resolviendo con {algo_name}...")
-            self.view.draw_path_animated(path, delay=30, visited=visited, color=color)
+            self.view.update_info(f"Resolviendo laberinto...")
+            self.view.draw_path_animated(path, delay=30, color=color)
         else:
             messagebox.showerror("Error", "No se encontró un camino entre la entrada y la salida.")
             self.view.update_info("No hay solución disponible")

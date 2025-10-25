@@ -54,65 +54,33 @@ class MazeView:
         frame = ctk.CTkFrame(self.root)
         frame.pack(pady=10)
 
-        button_style = {"width": 150, "height": 32, "corner_radius": 6}
+        button_style = {"width": 120, "height": 32, "corner_radius": 6}
 
         # --- FILA 1 ---
         btn_dfs = ctk.CTkButton(
-            frame, text="Generar (DFS)",
-            command=lambda: self.controller.generate_maze(25, 25, "DFS"),
+            frame, text="Nuevo laberinto",
+            command=lambda: self.start_play(),
             **button_style
         )
-        btn_dfs.grid(row=0, column=0, padx=8, pady=5)
-
-        btn_bfs = ctk.CTkButton(
-            frame, text="Resolver (BFS)",
-            command=lambda: self.controller.solve_maze("BFS"),
-            **button_style
-        )
-        btn_bfs.grid(row=0, column=1, padx=8, pady=5)
-
-        btn_graph = ctk.CTkButton(
-            frame, text="Ver como Grafo",
-            command=self.show_graph,
-            **button_style
-        )
-        btn_graph.grid(row=0, column=2, padx=8, pady=5)
-
-        btn_manual = ctk.CTkButton(
-            frame, text="Modo Manual",
-            command=self.start_manual_mode,
-            **button_style
-        )
-        btn_manual.grid(row=0, column=3, padx=8, pady=5)
-
-        # --- FILA 2 ---
-        btn_kruskal = ctk.CTkButton(
-            frame, text="Generar (Kruskal)",
-            command=lambda: self.controller.generate_maze(25, 25, "Kruskal"),
-            **button_style
-        )
-        btn_kruskal.grid(row=1, column=0, padx=8, pady=5)
+        btn_dfs.grid(row=0, column=0, padx=12, pady=5)
 
         btn_astar = ctk.CTkButton(
-            frame, text="Resolver (A*)",
-            command=lambda: self.controller.solve_maze("ASTAR"),
+            frame, text="Resolver",
+            command=lambda: self.controller.solve_maze(),
             **button_style
         )
-        btn_astar.grid(row=1, column=1, padx=8, pady=5)
-
-        btn_maze = ctk.CTkButton(
-            frame, text="Ver como Laberinto",
-            command=self.show_maze,
-            **button_style
-        )
-        btn_maze.grid(row=1, column=2, padx=8, pady=5)
+        btn_astar.grid(row=0, column=1, padx=12, pady=5)
 
         btn_reset = ctk.CTkButton(
             frame, text="Reiniciar",
             command=self.reset_manual_mode,
             **button_style
         )
-        btn_reset.grid(row=1, column=3, padx=8, pady=5)
+        btn_reset.grid(row=0, column=3, padx=12, pady=5)
+
+    def start_play(self):
+        self.controller.generate_maze(25,25)
+        self.start_manual_mode()
 
     def update_info(self, text):
         """Actualiza el label de información."""
@@ -196,34 +164,8 @@ class MazeView:
             x_end = sx * self.cell_size + self.margin + self.cell_size + 10
             self.canvas.create_line(x_start, sy_center, x_end, sy_center, fill="red", width=3, arrow="last")
 
-    def draw_visited_nodes(self, visited, exclude_path=None):
-        """
-        Dibuja los nodos visitados durante la búsqueda.
-        Args:
-            visited: conjunto de nodos visitados
-            exclude_path: conjunto de nodos que están en el camino final (para no pintarlos)
-        """
-        if exclude_path is None:
-            exclude_path = set()
-
-        for node in visited:
-            if node not in exclude_path:
-                x = node[0] * self.cell_size + self.margin + self.cell_size // 2
-                y = node[1] * self.cell_size + self.margin + self.cell_size // 2
-                radius = 3
-                self.canvas.create_oval(
-                    x - radius, y - radius,
-                    x + radius, y + radius,
-                    fill="#FFD700", outline="", tags="visited"
-                )
-
-    def draw_path_animated(self, path, delay, visited=None, color="#057032"):
+    def draw_path_animated(self, path, delay, color="#057032"):
         """Dibuja el camino como una línea animada que crece paso a paso."""
-
-        # Primero dibujar nodos visitados si están disponibles
-        if visited:
-            path_set = set(path)
-            self.draw_visited_nodes(visited, exclude_path=path_set)
 
         def draw_step(index):
             if index == 0:
@@ -232,8 +174,7 @@ class MazeView:
 
             if index >= len(path):
                 self.update_info(
-                    f"Camino encontrado: {len(path) - 1} pasos | "
-                    f"Nodos explorados: {len(visited) - 1 if visited else '?'}"
+                    f"Camino encontrado: {len(path) - 1} movimientos"
                 )
                 return
 
@@ -249,57 +190,6 @@ class MazeView:
             self.root.after(delay, lambda: draw_step(index + 1))
 
         draw_step(0)
-
-    def draw_graph(self, graph):
-        """Dibuja el grafo del laberinto con nodos y aristas."""
-        self.canvas.delete("all")
-        node_radius = 5
-        link_color = "#CFCFCF"
-        default_node_color = "#696969"
-        entry_exit_color = "#FF0000"
-
-        # Dibujar aristas
-        for node, neighbors in graph.adjacency.items():
-            x1 = node[0] * self.cell_size + self.margin + self.cell_size // 2
-            y1 = node[1] * self.cell_size + self.margin + self.cell_size // 2
-            for n in neighbors:
-                x2 = n[0] * self.cell_size + self.margin + self.cell_size // 2
-                y2 = n[1] * self.cell_size + self.margin + self.cell_size // 2
-                self.canvas.create_line(x1, y1, x2, y2, fill=link_color, width=1)
-
-        # Dibujar nodos
-        for node in graph.adjacency.keys():
-            x = node[0] * self.cell_size + self.margin + self.cell_size // 2
-            y = node[1] * self.cell_size + self.margin + self.cell_size // 2
-
-            if node == graph.entry or node == graph.exit:
-                node_color = entry_exit_color
-            else:
-                node_color = default_node_color
-
-            self.canvas.create_oval(
-                x - node_radius, y - node_radius,
-                x + node_radius, y + node_radius,
-                fill=node_color, outline=""
-            )
-
-    def show_graph(self):
-        """Cambia a modo visualización de grafo."""
-        if self.controller.graph:
-            self.mode = "graph"
-            self.draw_graph(self.controller.graph)
-            self.update_info("Vista de Grafo - Nodos y aristas del laberinto")
-        else:
-            messagebox.showerror("Error", "Primero debes generar un laberinto.")
-
-    def show_maze(self):
-        """Cambia a modo visualización de laberinto."""
-        if self.controller.graph:
-            self.mode = "maze"
-            self.draw_maze(self.controller.graph)
-            self.update_info("Vista de Laberinto - Listo para resolver")
-        else:
-            messagebox.showerror("Error", "Primero debes generar un laberinto.")
 
     def start_manual_mode(self):
         """Inicia el modo manual."""
@@ -322,7 +212,7 @@ class MazeView:
         self.draw_player()
 
         self.update_info(
-            "Modo Manual - Usa las flechas del teclado para moverte"
+            "Usa las flechas del teclado para moverte"
         )
 
     def reset_manual_mode(self):
@@ -380,7 +270,7 @@ class MazeView:
                 self.manual_mode = False
             else:
                 self.update_info(
-                    f"Modo Manual | Movimientos: {len(self.manual_path) - 1}"
+                    f"Movimientos: {len(self.manual_path) - 1}"
                 )
         else:
             # Movimiento inválido (hay pared)
