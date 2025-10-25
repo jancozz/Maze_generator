@@ -1,3 +1,5 @@
+from tkinter import messagebox
+
 import customtkinter as ctk
 import sys
 import os
@@ -79,9 +81,8 @@ class MazeView:
         btn_graph.grid(row=0, column=2, padx=8, pady=5)
 
         btn_manual = ctk.CTkButton(
-            frame, text="Jugar Manual",
+            frame, text="Modo Manual",
             command=self.start_manual_mode,
-            # fg_color="#1E88E5",
             **button_style
         )
         btn_manual.grid(row=0, column=3, padx=8, pady=5)
@@ -111,7 +112,6 @@ class MazeView:
         btn_reset = ctk.CTkButton(
             frame, text="Reiniciar",
             command=self.reset_manual_mode,
-            # fg_color="#E53935",
             **button_style
         )
         btn_reset.grid(row=1, column=3, padx=8, pady=5)
@@ -234,8 +234,8 @@ class MazeView:
 
             if index >= len(path):
                 self.update_info(
-                    f"Camino encontrado: {len(path)} pasos | "
-                    f"Nodos explorados: {len(visited) if visited else '?'}"
+                    f"Camino encontrado: {len(path) - 1} pasos | "
+                    f"Nodos explorados: {len(visited) - 1 if visited else '?'}"
                 )
                 return
 
@@ -291,6 +291,8 @@ class MazeView:
             self.mode = "graph"
             self.draw_graph(self.controller.graph)
             self.update_info("Vista de Grafo - Nodos y aristas del laberinto")
+        else:
+            messagebox.showerror("Error", "Primero debes generar un laberinto.")
 
     def show_maze(self):
         """Cambia a modo visualización de laberinto."""
@@ -298,16 +300,16 @@ class MazeView:
             self.mode = "maze"
             self.draw_maze(self.controller.graph)
             self.update_info("Vista de Laberinto - Listo para resolver")
+        else:
+            messagebox.showerror("Error", "Primero debes generar un laberinto.")
 
     def start_manual_mode(self):
-        """✅ NUEVO: Inicia el modo manual."""
+        """Inicia el modo manual."""
         if not self.controller.graph:
-            from tkinter import messagebox
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
             return
 
         if not self.controller.graph.entry:
-            from tkinter import messagebox
             messagebox.showerror("Error", "El laberinto no tiene punto de entrada.")
             return
 
@@ -322,13 +324,23 @@ class MazeView:
         self.draw_player()
 
         self.update_info(
-            "🎮 MODO MANUAL - Usa las flechas del teclado para moverte | "
-            f"Posición: {self.player_position} | Movimientos: 0"
+            "Modo Manual - Usa las flechas del teclado para moverte"
         )
 
     def reset_manual_mode(self):
-        """✅ NUEVO: Reinicia el modo manual."""
+        """Reinicia el modo manual."""
+        #Validar que haya un laberinto generado
+        if not self.controller.graph:
+            messagebox.showerror("Error", "Primero debes generar un laberinto.")
+            return
+
+        #Validar que esté en modo manual
         if not self.manual_mode:
+            messagebox.showerror(
+                "Error",
+                "Primero debes iniciar el modo manual.\n\n"
+                "Presiona el botón 'Modo Manual' para comenzar."
+            )
             return
 
         self.player_position = self.controller.graph.entry
@@ -338,12 +350,11 @@ class MazeView:
         self.draw_player()
 
         self.update_info(
-            "🔄 Reiniciado | Usa las flechas del teclado | "
-            f"Posición: {self.player_position} | Movimientos: 0"
+            "Reiniciado | Usa las flechas del teclado para moverte"
         )
 
     def move_player(self, dx, dy):
-        """✅ NUEVO: Mueve al jugador en la dirección especificada."""
+        """Mueve al jugador en la dirección especificada."""
         if not self.manual_mode or not self.player_position:
             return
 
@@ -364,14 +375,14 @@ class MazeView:
 
             # Verificar si llegó a la salida
             if self.player_position == self.controller.graph.exit:
+                messagebox.showinfo("¡Ganaste!", "Has llegado a la salida del laberinto")
                 self.update_info(
-                    f"🎉 ¡GANASTE! Completado en {len(self.manual_path) - 1} movimientos"
+                    f"Completado en {len(self.manual_path) - 1} movimientos"
                 )
                 self.manual_mode = False
             else:
                 self.update_info(
-                    f"🎮 MODO MANUAL | Posición: {self.player_position} | "
-                    f"Movimientos: {len(self.manual_path) - 1}"
+                    f"Modo Manual | Movimientos: {len(self.manual_path) - 1}"
                 )
         else:
             # Movimiento inválido (hay pared)
@@ -382,13 +393,13 @@ class MazeView:
             self.root.after(100, lambda: self.canvas.delete("invalid"))
 
     def draw_player(self):
-        """✅ NUEVO: Dibuja al jugador en su posición actual."""
+        """Dibuja al jugador en su posición actual."""
         if not self.player_position:
             return
 
         x = self.player_position[0] * self.cell_size + self.margin + self.cell_size // 2
         y = self.player_position[1] * self.cell_size + self.margin + self.cell_size // 2
-        radius = 8
+        radius = 6
 
         # Borrar jugador anterior
         self.canvas.delete("player")
@@ -401,7 +412,7 @@ class MazeView:
         )
 
     def draw_manual_path(self):
-        """✅ NUEVO: Dibuja el camino recorrido por el jugador."""
+        """Dibuja el camino recorrido por el jugador."""
         if len(self.manual_path) < 2:
             return
 
