@@ -4,9 +4,16 @@ from collections import deque
 
 
 class DisjointSet:
-    """Estructura de conjuntos disjuntos para el algoritmo de Kruskal."""
+    """
+    Estructura de conjuntos disjuntos para el algoritmo de Kruskal.
+    """
 
     def __init__(self, width, height):
+        """
+        Inicializa la estructura con todos los nodos separados.
+
+        Al inicio, cada celda es su propio grupo (isla separada).
+        """
         self.parent = {(x, y): (x, y) for x in range(width) for y in range(height)}
         self.rank = {(x, y): 0 for x in range(width) for y in range(height)}
 
