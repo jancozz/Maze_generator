@@ -14,16 +14,16 @@ class MazeController:
         self.graph = None
         self.view = MazeView(root, self)
 
-    def generate_maze(self, width, height, algorithm):
+    def generate_maze(self, width, height, algorithm, passages_ratio):
         """Genera un nuevo laberinto (DFS, Kruskal o Prim)."""
         self.graph = Graph(width, height)
 
         self.view.update_info(f"Generando laberinto con {algorithm}...")
 
         if algorithm == "DFS":
-            generate_maze_dfs(self.graph)
+            generate_maze_dfs(self.graph, passages_ratio)
         elif algorithm == "Kruskal":
-            generate_maze_kruskal(self.graph)
+            generate_maze_kruskal(self.graph, passages_ratio)
         else:
             messagebox.showerror("Error", f"Algoritmo '{algorithm}' no soportado.")
             return

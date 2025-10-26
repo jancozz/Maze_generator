@@ -15,8 +15,18 @@ class MazeView:
         """
         self.root = root
         self.controller = controller
-        self.cell_size = 27
+        self.cell_size = 25
         self.margin = 15
+        self.difficulties = {
+            "Fácil": {"size": (25, 25), "passages": 0.5},
+            "Intermedio": {"size": (35, 25), "passages": 0.30},
+            "Difícil": {"size": (45, 30), "passages": 0.15}
+        }
+        self.current_difficulty = "Fácil"
+
+        # Calcular tamaño inicial de canvas
+        initial_size = self.difficulties["Fácil"]["size"]
+        self.canvas_size = max(initial_size) * self.cell_size + self.margin * 2
         self.mode = "maze"
 
         # Variables para modo manual
@@ -28,7 +38,7 @@ class MazeView:
         self.info_label = ctk.CTkLabel(
             root,
             text="Genera un laberinto para comenzar",
-            font=("Arial", 12)
+            font=("Arial", 13)
         )
         self.info_label.pack(pady=5)
 
@@ -39,7 +49,7 @@ class MazeView:
             bg="#1e1e1e",
             highlightthickness=0
         )
-        self.canvas.pack(pady=10)
+        self.canvas.pack(pady=(0, 10))
 
         self.setup_controls()
 
@@ -57,62 +67,113 @@ class MazeView:
         button_style = {"width": 150, "height": 32, "corner_radius": 6}
 
         # --- FILA 1 ---
+        difficulty_selector = ctk.CTkSegmentedButton(
+            frame,
+            values=["Fácil", "Intermedio", "Difícil"],
+            command=self.change_difficulty,
+            width=360,
+            selected_color="gray"
+        )
+        difficulty_selector.set("Fácil")
+        difficulty_selector.grid(row=0, column=0, columnspan=3, padx=8, pady=5)
+
+        # --- FILA 2 ---
         btn_dfs = ctk.CTkButton(
             frame, text="Generar (DFS)",
             command=lambda: self.controller.generate_maze(25, 25, "DFS"),
             **button_style
         )
-        btn_dfs.grid(row=0, column=0, padx=8, pady=5)
+        btn_dfs.grid(row=1, column=0, padx=8, pady=5)
 
         btn_bfs = ctk.CTkButton(
             frame, text="Resolver (BFS)",
             command=lambda: self.controller.solve_maze("BFS"),
             **button_style
         )
-        btn_bfs.grid(row=0, column=1, padx=8, pady=5)
+        btn_bfs.grid(row=1, column=1, padx=8, pady=5)
 
         btn_graph = ctk.CTkButton(
             frame, text="Ver como Grafo",
             command=self.show_graph,
             **button_style
         )
-        btn_graph.grid(row=0, column=2, padx=8, pady=5)
+        btn_graph.grid(row=1, column=2, padx=8, pady=5)
 
         btn_manual = ctk.CTkButton(
             frame, text="Modo Manual",
             command=self.start_manual_mode,
             **button_style
         )
-        btn_manual.grid(row=0, column=3, padx=8, pady=5)
+        btn_manual.grid(row=1, column=3, padx=8, pady=5)
 
-        # --- FILA 2 ---
+        # --- FILA 3 ---
         btn_kruskal = ctk.CTkButton(
             frame, text="Generar (Kruskal)",
             command=lambda: self.controller.generate_maze(25, 25, "Kruskal"),
             **button_style
         )
-        btn_kruskal.grid(row=1, column=0, padx=8, pady=5)
+        btn_kruskal.grid(row=2, column=0, padx=8, pady=5)
 
         btn_astar = ctk.CTkButton(
             frame, text="Resolver (A*)",
             command=lambda: self.controller.solve_maze("ASTAR"),
             **button_style
         )
-        btn_astar.grid(row=1, column=1, padx=8, pady=5)
+        btn_astar.grid(row=2, column=1, padx=8, pady=5)
 
         btn_maze = ctk.CTkButton(
             frame, text="Ver como Laberinto",
             command=self.show_maze,
             **button_style
         )
-        btn_maze.grid(row=1, column=2, padx=8, pady=5)
+        btn_maze.grid(row=2, column=2, padx=8, pady=5)
 
         btn_reset = ctk.CTkButton(
             frame, text="Reiniciar",
             command=self.reset_manual_mode,
             **button_style
         )
-        btn_reset.grid(row=1, column=3, padx=8, pady=5)
+        btn_reset.grid(row=2, column=3, padx=8, pady=5)
+
+    def change_difficulty(self, value):
+        """Cambia la dificultad seleccionada."""
+        self.current_difficulty = value
+        config = self.difficulties[value]
+        width, height = config["size"]
+
+        self.update_info(f"Dificultad: {value} ({width}x{height} celdas)")
+
+    def resize_canvas(self, width, height):
+        """Redimensiona el canvas según el tamaño del laberinto."""
+        canvas_width = width * self.cell_size + self.margin * 2
+        canvas_height = height * self.cell_size + self.margin * 2
+
+        # Redimensionar canvas
+        self.canvas.configure(width=canvas_width, height=canvas_height)
+
+        # Ajustar tamaño de ventana centrada
+        window_width = canvas_width + 30
+        window_height = canvas_height + 165
+
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        x_position = int((screen_width - window_width) / 2)
+        y_position = int((screen_height - window_height) * 0.25)
+
+        self.root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+
+    def start_play(self):
+        """Inicia el juego con la dificultad seleccionada."""
+        config = self.difficulties[self.current_difficulty]
+        width, height = config["size"]
+        passages_ratio = config["passages"]
+
+        # Ajustar canvas antes de generar
+        self.resize_canvas(width, height)
+
+        self.controller.generate_maze(width, height, passages_ratio)
+        self.start_manual_mode()
 
     def update_info(self, text):
         """Actualiza el label de información."""
@@ -147,15 +208,12 @@ class MazeView:
                 if (x - 1, y) not in neighbors:
                     self.canvas.create_line(x1, y1, x1, y2, width=2, fill=wall_color)
 
-        # Dibujar aperturas (roturas) en entrada y salida
-        if graph.entry:
-            self._draw_opening(graph.entry, graph.width, graph.height)
-
+        # Dibujar apertura de salida
         if graph.exit:
             self._draw_opening(graph.exit, graph.width, graph.height)
 
-        # Dibujar flechas de entrada/salida
-        self._draw_entry_exit_arrows(graph)
+        # Dibujar flecha de salida
+        self.draw_exit_arrow(graph)
 
     def _draw_opening(self, node, width, height):
         """Rompe la pared del borde en la entrada o salida."""
@@ -178,17 +236,8 @@ class MazeView:
             # Quitar parte de la pared inferior
             self.canvas.create_line(x1, y2, x2, y2, fill="#1e1e1e", width=3)
 
-    def _draw_entry_exit_arrows(self, graph):
-        """Dibuja las flechas de entrada y salida en los bordes."""
-        # Entrada
-        if graph.entry:
-            ex, ey = graph.entry
-            ey_center = ey * self.cell_size + self.margin + self.cell_size // 2
-            x_start = ex * self.cell_size + self.margin - 5
-            x_end = ex * self.cell_size + self.margin + 10
-            self.canvas.create_line(x_start, ey_center, x_end, ey_center, fill="red", width=3, arrow="last")
-
-        # Salida
+    def draw_exit_arrow(self, graph):
+        """Dibuja la flecha de salida en el borde."""
         if graph.exit:
             sx, sy = graph.exit
             sy_center = sy * self.cell_size + self.margin + self.cell_size // 2
