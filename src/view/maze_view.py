@@ -18,14 +18,14 @@ class MazeView:
         self.cell_size = 25
         self.margin = 15
         self.difficulties = {
-            "Fácil": {"size": (25, 25), "passages": 0.5},
-            "Intermedio": {"size": (35, 25), "passages": 0.30},
-            "Difícil": {"size": (45, 30), "passages": 0.15}
+            "Pequeño": {"size": (25, 25), "passages": 0.5},
+            "Mediano": {"size": (35, 25), "passages": 0.30},
+            "Grande": {"size": (45, 30), "passages": 0.15}
         }
         self.current_difficulty = "Fácil"
 
         # Calcular tamaño inicial de canvas
-        initial_size = self.difficulties["Fácil"]["size"]
+        initial_size = self.difficulties["Pequeño"]["size"]
         self.canvas_size = max(initial_size) * self.cell_size + self.margin * 2
         self.mode = "maze"
 
@@ -44,12 +44,12 @@ class MazeView:
 
         self.canvas = ctk.CTkCanvas(
             root,
-            width=705,
-            height=705,
+            width=self.canvas_size,
+            height=self.canvas_size,
             bg="#1e1e1e",
             highlightthickness=0
         )
-        self.canvas.pack(pady=(0, 10))
+        self.canvas.pack(pady=0)
 
         self.setup_controls()
 
@@ -69,18 +69,18 @@ class MazeView:
         # --- FILA 1 ---
         difficulty_selector = ctk.CTkSegmentedButton(
             frame,
-            values=["Fácil", "Intermedio", "Difícil"],
+            values=["Pequeño", "Mediano", "Grande"],
             command=self.change_difficulty,
             width=360,
             selected_color="gray"
         )
         difficulty_selector.set("Fácil")
-        difficulty_selector.grid(row=0, column=0, columnspan=3, padx=8, pady=5)
+        difficulty_selector.grid(row=0, column=0, columnspan=4, padx=8, pady=5)
 
         # --- FILA 2 ---
         btn_dfs = ctk.CTkButton(
             frame, text="Generar (DFS)",
-            command=lambda: self.controller.generate_maze(25, 25, "DFS"),
+            command=lambda: self.create_maze("DFS"),
             **button_style
         )
         btn_dfs.grid(row=1, column=0, padx=8, pady=5)
@@ -109,7 +109,7 @@ class MazeView:
         # --- FILA 3 ---
         btn_kruskal = ctk.CTkButton(
             frame, text="Generar (Kruskal)",
-            command=lambda: self.controller.generate_maze(25, 25, "Kruskal"),
+            command=lambda: self.create_maze("Kruskal"),
             **button_style
         )
         btn_kruskal.grid(row=2, column=0, padx=8, pady=5)
@@ -153,7 +153,7 @@ class MazeView:
 
         # Ajustar tamaño de ventana centrada
         window_width = canvas_width + 30
-        window_height = canvas_height + 165
+        window_height = canvas_height + 185
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -163,7 +163,7 @@ class MazeView:
 
         self.root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
 
-    def start_play(self):
+    def create_maze(self, algorithm):
         """Inicia el juego con la dificultad seleccionada."""
         config = self.difficulties[self.current_difficulty]
         width, height = config["size"]
@@ -172,8 +172,7 @@ class MazeView:
         # Ajustar canvas antes de generar
         self.resize_canvas(width, height)
 
-        self.controller.generate_maze(width, height, passages_ratio)
-        self.start_manual_mode()
+        self.controller.generate_maze(width, height, algorithm, passages_ratio)
 
     def update_info(self, text):
         """Actualiza el label de información."""
@@ -210,12 +209,12 @@ class MazeView:
 
         # Dibujar apertura de salida
         if graph.exit:
-            self._draw_opening(graph.exit, graph.width, graph.height)
+            self.draw_opening(graph.exit, graph.width)
 
         # Dibujar flecha de salida
         self.draw_exit_arrow(graph)
 
-    def _draw_opening(self, node, width, height):
+    def draw_opening(self, node, width):
         """Rompe la pared del borde en la entrada o salida."""
         x, y = node
         x1 = x * self.cell_size + self.margin
@@ -223,21 +222,29 @@ class MazeView:
         x2 = x1 + self.cell_size
         y2 = y1 + self.cell_size
 
-        if x == 0:
-            # Quitar parte de la pared izquierda
-            self.canvas.create_line(x1, y1, x1, y2, fill="#1e1e1e", width=3)
-        elif x == width - 1:
+        if x == width - 1:
             # Quitar parte de la pared derecha
             self.canvas.create_line(x2, y1, x2, y2, fill="#1e1e1e", width=3)
-        elif y == 0:
-            # Quitar parte de la pared superior
-            self.canvas.create_line(x1, y1, x2, y1, fill="#1e1e1e", width=3)
-        elif y == height - 1:
-            # Quitar parte de la pared inferior
-            self.canvas.create_line(x1, y2, x2, y2, fill="#1e1e1e", width=3)
 
     def draw_exit_arrow(self, graph):
-        """Dibuja la flecha de salida en el borde."""
+        """Dibuja las flechas de entrada y salida en los bordes."""
+        # Entrada
+        if graph.entry:
+            x = graph.entry[0] * self.cell_size + self.margin + self.cell_size // 2
+            y = graph.entry[1] * self.cell_size + self.margin + self.cell_size // 2
+            radius = 7
+
+            # Borrar jugador anterior
+            self.canvas.delete("player")
+
+            # Dibujar nuevo jugador
+            self.canvas.create_oval(
+                x - radius, y - radius,
+                x + radius, y + radius,
+                fill="#54AFFF", outline="#0070D1", width=2, tags="player"
+            )
+
+        # Salida
         if graph.exit:
             sx, sy = graph.exit
             sy_center = sy * self.cell_size + self.margin + self.cell_size // 2
@@ -281,7 +288,7 @@ class MazeView:
 
             if index >= len(path):
                 self.update_info(
-                    f"Camino encontrado: {len(path) - 1} pasos | "
+                    f"Camino encontrado: {len(path) - 1} movimientos | "
                     f"Nodos explorados: {len(visited) - 1 if visited else '?'}"
                 )
                 return
@@ -294,6 +301,11 @@ class MazeView:
             x2 = x2 * self.cell_size + self.margin + self.cell_size // 2
             y2 = y2 * self.cell_size + self.margin + self.cell_size // 2
 
+            if index == 1:
+                # Calcular el punto medio entre el nodo 0 y el nodo 1
+                x1 = (x1 + x2) / 2
+                y1 = (y1 + y2) / 2
+
             self.canvas.create_line(x1, y1, x2, y2, fill=color, width=6, tags="path")
             self.root.after(delay, lambda: draw_step(index + 1))
 
@@ -305,7 +317,8 @@ class MazeView:
         node_radius = 5
         link_color = "#CFCFCF"
         default_node_color = "#696969"
-        entry_exit_color = "#FF0000"
+        start_color = "#0070D1"
+        exit_color = "#FF0000"
 
         # Dibujar aristas
         for node, neighbors in graph.adjacency.items():
@@ -321,8 +334,10 @@ class MazeView:
             x = node[0] * self.cell_size + self.margin + self.cell_size // 2
             y = node[1] * self.cell_size + self.margin + self.cell_size // 2
 
-            if node == graph.entry or node == graph.exit:
-                node_color = entry_exit_color
+            if node == graph.entry:
+                node_color = start_color
+            elif node == graph.exit:
+                node_color = exit_color
             else:
                 node_color = default_node_color
 
@@ -422,7 +437,7 @@ class MazeView:
 
             # Verificar si llegó a la salida
             if self.player_position == self.controller.graph.exit:
-                messagebox.showinfo("¡Ganaste!", "Has llegado a la salida del laberinto")
+                messagebox.showinfo("¡Felicitaciones!", "¡Completaste el laberinto!")
                 self.update_info(
                     f"Completado en {len(self.manual_path) - 1} movimientos"
                 )
@@ -433,8 +448,10 @@ class MazeView:
                 )
         else:
             # Movimiento inválido (hay pared)
+            canvas_width = self.controller.graph.width * self.cell_size + self.margin * 2
+            canvas_height = self.controller.graph.height * self.cell_size + self.margin * 2
             self.canvas.create_rectangle(
-                0, 0, 705, 705,
+                0, 0, canvas_width, canvas_height,
                 fill="", outline="#FF0000", width=5, tags="invalid"
             )
             self.root.after(100, lambda: self.canvas.delete("invalid"))
@@ -446,7 +463,7 @@ class MazeView:
 
         x = self.player_position[0] * self.cell_size + self.margin + self.cell_size // 2
         y = self.player_position[1] * self.cell_size + self.margin + self.cell_size // 2
-        radius = 6
+        radius = 7
 
         # Borrar jugador anterior
         self.canvas.delete("player")
@@ -455,7 +472,7 @@ class MazeView:
         self.canvas.create_oval(
             x - radius, y - radius,
             x + radius, y + radius,
-            fill="#FFD700", outline="#FFA000", width=2, tags="player"
+            fill="#54AFFF", outline="#0070D1", width=2, tags="player"
         )
 
     def draw_manual_path(self):
