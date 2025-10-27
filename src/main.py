@@ -11,9 +11,9 @@ def main():
 
     # Crear ventana principal
     root = ctk.CTk()
-    root.title("Generador y Solucionador de Laberintos")
+    root.title("Maze Master")
     window_width = 685
-    window_height = 820
+    window_height = 800
 
     # Obtener dimensiones de la pantalla
     screen_width = root.winfo_screenwidth()

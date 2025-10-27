@@ -52,7 +52,7 @@ class MazeView:
             bg="#1e1e1e",
             highlightthickness=0
         )
-        self.canvas.pack(pady=(0, 10))
+        self.canvas.pack(pady=0)
 
         self.setup_controls()
 
@@ -156,7 +156,7 @@ class MazeView:
 
         # Ajustar tamaño de ventana centrada
         window_width = canvas_width + 30
-        window_height = canvas_height + 165
+        window_height = canvas_height + 145
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
