@@ -4,15 +4,10 @@ import customtkinter as ctk
 
 
 class MazeView:
-    """
-    Vista gráfica del laberinto usando customtkinter.
-    Dibuja la cuadrícula, botones de control y el camino resuelto.
-    """
+    """Vista gráfica del laberinto usando customtkinter."""
 
     def __init__(self, root, controller):
-        """
-        Inicializa la vista con canvas y controles.
-        """
+        """Inicializa la vista con canvas y controles."""
         self.root = root
         self.controller = controller
         self.cell_size = 25
@@ -60,7 +55,7 @@ class MazeView:
         self.root.bind('<Right>', lambda e: self.move_player(1, 0))
 
     def setup_controls(self):
-        """Crea los botones de control para generar y resolver el laberinto."""
+        """Crea los botones de control para generar y resolver."""
         frame = ctk.CTkFrame(self.root)
         frame.pack(pady=10)
 
@@ -136,7 +131,7 @@ class MazeView:
         btn_reset.grid(row=2, column=3, padx=8, pady=5)
 
     def change_difficulty(self, value):
-        """Cambia la dificultad seleccionada."""
+        """Cambia la dificultad y redimensiona el canvas."""
         self.current_difficulty = value
         config = self.difficulties[value]
         width, height = config["size"]
@@ -146,14 +141,12 @@ class MazeView:
         self.update_info(f"Tamaño: {value} ({width}x{height} celdas)")
 
     def resize_canvas(self, width, height):
-        """Redimensiona el canvas según el tamaño del laberinto."""
+        """Redimensiona el canvas y la ventana según el tamaño del laberinto."""
         canvas_width = width * self.cell_size + self.margin * 2
         canvas_height = height * self.cell_size + self.margin * 2
 
-        # Redimensionar canvas
         self.canvas.configure(width=canvas_width, height=canvas_height)
 
-        # Ajustar tamaño de ventana centrada
         window_width = canvas_width + 30
         window_height = canvas_height + 185
 
@@ -163,17 +156,17 @@ class MazeView:
         x_position = int((screen_width - window_width) / 2)
         y_position = int((screen_height - window_height) * 0.25)
 
-        self.root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+        self.root.geometry(
+            f"{window_width}x{window_height}+{x_position}+{y_position}"
+        )
 
     def create_maze(self, algorithm):
-        """Inicia el juego con la dificultad seleccionada."""
+        """Genera un laberinto con la dificultad seleccionada."""
         config = self.difficulties[self.current_difficulty]
         width, height = config["size"]
         passages_ratio = config["passages"]
 
-        # Ajustar canvas antes de generar
         self.resize_canvas(width, height)
-
         self.controller.generate_maze(width, height, algorithm, passages_ratio)
 
     def update_info(self, text):
@@ -181,9 +174,7 @@ class MazeView:
         self.info_label.configure(text=text)
 
     def draw_maze(self, graph):
-        """
-        Dibuja el laberinto en el canvas, construyendo paredes según las adyacencias del grafo.
-        """
+        """Dibuja el laberinto con paredes según las adyacencias del grafo."""
         self.canvas.delete("all")
         wall_color = "#cccccc"
 
@@ -198,26 +189,32 @@ class MazeView:
 
                 # Pared superior
                 if (x, y - 1) not in neighbors:
-                    self.canvas.create_line(x1, y1, x2, y1, width=2, fill=wall_color)
+                    self.canvas.create_line(
+                        x1, y1, x2, y1, width=2, fill=wall_color
+                    )
                 # Pared inferior
                 if (x, y + 1) not in neighbors:
-                    self.canvas.create_line(x1, y2, x2, y2, width=2, fill=wall_color)
+                    self.canvas.create_line(
+                        x1, y2, x2, y2, width=2, fill=wall_color
+                    )
                 # Pared derecha
                 if (x + 1, y) not in neighbors:
-                    self.canvas.create_line(x2, y1, x2, y2, width=2, fill=wall_color)
+                    self.canvas.create_line(
+                        x2, y1, x2, y2, width=2, fill=wall_color
+                    )
                 # Pared izquierda
                 if (x - 1, y) not in neighbors:
-                    self.canvas.create_line(x1, y1, x1, y2, width=2, fill=wall_color)
+                    self.canvas.create_line(
+                        x1, y1, x1, y2, width=2, fill=wall_color
+                    )
 
-        # Dibujar apertura de salida
         if graph.exit:
             self.draw_opening(graph.exit, graph.width)
 
-        # Dibujar flecha de salida
         self.draw_exit_arrow(graph)
 
     def draw_opening(self, node, width):
-        """Rompe la pared del borde en la entrada o salida."""
+        """Abre la pared del borde en la entrada o salida."""
         x, y = node
         x1 = x * self.cell_size + self.margin
         y1 = y * self.cell_size + self.margin
@@ -225,49 +222,46 @@ class MazeView:
         y2 = y1 + self.cell_size
 
         if x == width - 1:
-            # Quitar parte de la pared derecha
             self.canvas.create_line(x2, y1, x2, y2, fill="#1e1e1e", width=3)
 
     def draw_exit_arrow(self, graph):
-        """Dibuja las flechas de entrada y salida en los bordes."""
-        # Entrada
+        """Dibuja el marcador de entrada y la flecha de salida."""
         if graph.entry:
-            x = graph.entry[0] * self.cell_size + self.margin + self.cell_size // 2
-            y = graph.entry[1] * self.cell_size + self.margin + self.cell_size // 2
+            x = (graph.entry[0] * self.cell_size + self.margin +
+                 self.cell_size // 2)
+            y = (graph.entry[1] * self.cell_size + self.margin +
+                 self.cell_size // 2)
             radius = 7
 
-            # Borrar jugador anterior
             self.canvas.delete("player")
 
-            # Dibujar nuevo jugador
             self.canvas.create_oval(
                 x - radius, y - radius,
                 x + radius, y + radius,
                 fill="#54AFFF", outline="#0070D1", width=2, tags="player"
             )
 
-        # Salida
         if graph.exit:
             sx, sy = graph.exit
             sy_center = sy * self.cell_size + self.margin + self.cell_size // 2
             x_start = sx * self.cell_size + self.margin + self.cell_size - 5
             x_end = sx * self.cell_size + self.margin + self.cell_size + 10
-            self.canvas.create_line(x_start, sy_center, x_end, sy_center, fill="red", width=3, arrow="last")
+            self.canvas.create_line(
+                x_start, sy_center, x_end, sy_center,
+                fill="red", width=3, arrow="last"
+            )
 
     def draw_visited_nodes(self, visited, exclude_path=None):
-        """
-        Dibuja los nodos visitados durante la búsqueda.
-        Args:
-            visited: conjunto de nodos visitados
-            exclude_path: conjunto de nodos que están en el camino final (para no pintarlos)
-        """
+        """Dibuja los nodos visitados durante la búsqueda."""
         if exclude_path is None:
             exclude_path = set()
 
         for node in visited:
             if node not in exclude_path:
-                x = node[0] * self.cell_size + self.margin + self.cell_size // 2
-                y = node[1] * self.cell_size + self.margin + self.cell_size // 2
+                x = (node[0] * self.cell_size + self.margin +
+                     self.cell_size // 2)
+                y = (node[1] * self.cell_size + self.margin +
+                     self.cell_size // 2)
                 radius = 3
                 self.canvas.create_oval(
                     x - radius, y - radius,
@@ -276,14 +270,13 @@ class MazeView:
                 )
 
     def draw_path_animated(self, path, delay, visited=None, color="#057032"):
-        """Dibuja el camino como una línea animada que crece paso a paso."""
-
-        # Primero dibujar nodos visitados si están disponibles
+        """Dibuja el camino de solución de forma animada."""
         if visited:
             path_set = set(path)
             self.draw_visited_nodes(visited, exclude_path=path_set)
 
         def draw_step(index):
+            """Dibuja un paso del camino."""
             if index == 0:
                 draw_step(index + 1)
                 return
@@ -304,17 +297,18 @@ class MazeView:
             y2 = y2 * self.cell_size + self.margin + self.cell_size // 2
 
             if index == 1:
-                # Calcular el punto medio entre el nodo 0 y el nodo 1
                 x1 = (x1 + x2) / 2
                 y1 = (y1 + y2) / 2
 
-            self.canvas.create_line(x1, y1, x2, y2, fill=color, width=6, tags="path")
+            self.canvas.create_line(
+                x1, y1, x2, y2, fill=color, width=6, tags="path"
+            )
             self.root.after(delay, lambda: draw_step(index + 1))
 
         draw_step(0)
 
     def draw_graph(self, graph):
-        """Dibuja el grafo del laberinto con nodos y aristas."""
+        """Dibuja la representación en grafo del laberinto."""
         self.canvas.delete("all")
         node_radius = 5
         link_color = "#CFCFCF"
@@ -350,7 +344,7 @@ class MazeView:
             )
 
     def show_graph(self):
-        """Cambia a modo visualización de grafo."""
+        """Cambia a la visualización de grafo."""
         if self.controller.graph:
             self.mode = "graph"
             self.draw_graph(self.controller.graph)
@@ -359,7 +353,7 @@ class MazeView:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
 
     def show_maze(self):
-        """Cambia a modo visualización de laberinto."""
+        """Cambia a la visualización de laberinto."""
         if self.controller.graph:
             self.mode = "maze"
             self.draw_maze(self.controller.graph)
@@ -368,37 +362,32 @@ class MazeView:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
 
     def start_manual_mode(self):
-        """Inicia el modo manual."""
+        """Inicia el modo de juego manual."""
         if not self.controller.graph:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
             return
 
         if not self.controller.graph.entry:
-            messagebox.showerror("Error", "El laberinto no tiene punto de entrada.")
+            messagebox.showerror(
+                "Error", "El laberinto no tiene punto de entrada."
+            )
             return
 
         self.manual_mode = True
         self.player_position = self.controller.graph.entry
         self.manual_path = [self.player_position]
 
-        # Redibujar el laberinto limpio
         self.draw_maze(self.controller.graph)
-
-        # Dibujar el jugador
         self.draw_player()
 
-        self.update_info(
-            "Modo Manual - Usa las flechas del teclado para moverte"
-        )
+        self.update_info("Modo Manual - Usa las flechas del teclado para moverte")
 
     def reset_manual_mode(self):
-        """Reinicia el modo manual."""
-        # Validar que haya un laberinto generado
+        """Reinicia el modo manual al punto de entrada."""
         if not self.controller.graph:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
             return
 
-        # Validar que esté en modo manual
         if not self.manual_mode:
             messagebox.showerror(
                 "Error",
@@ -413,9 +402,7 @@ class MazeView:
         self.draw_maze(self.controller.graph)
         self.draw_player()
 
-        self.update_info(
-            "Reiniciado | Usa las flechas del teclado para moverte"
-        )
+        self.update_info("Reiniciado | Usa las flechas del teclado para moverte")
 
     def move_player(self, dx, dy):
         """Mueve al jugador en la dirección especificada."""
@@ -425,21 +412,20 @@ class MazeView:
         current = self.player_position
         new_position = (current[0] + dx, current[1] + dy)
 
-        # Verificar si el movimiento es válido (hay arista en el grafo)
         neighbors = self.controller.graph.neighbors(current)
 
         if new_position in neighbors:
             self.player_position = new_position
             self.manual_path.append(new_position)
 
-            # Redibujar
             self.draw_maze(self.controller.graph)
             self.draw_manual_path()
             self.draw_player()
 
-            # Verificar si llegó a la salida
             if self.player_position == self.controller.graph.exit:
-                messagebox.showinfo("¡Felicitaciones!", "¡Completaste el laberinto!")
+                messagebox.showinfo(
+                    "¡Felicitaciones!", "¡Completaste el laberinto!"
+                )
                 self.update_info(
                     f"Completado en {len(self.manual_path) - 1} movimientos"
                 )
@@ -449,9 +435,11 @@ class MazeView:
                     f"Modo Manual | Movimientos: {len(self.manual_path) - 1}"
                 )
         else:
-            # Movimiento inválido (hay pared)
-            canvas_width = self.controller.graph.width * self.cell_size + self.margin * 2
-            canvas_height = self.controller.graph.height * self.cell_size + self.margin * 2
+            # Efecto visual de movimiento inválido
+            canvas_width = (self.controller.graph.width * self.cell_size +
+                            self.margin * 2)
+            canvas_height = (self.controller.graph.height * self.cell_size +
+                             self.margin * 2)
             self.canvas.create_rectangle(
                 0, 0, canvas_width, canvas_height,
                 fill="", outline="#FF0000", width=5, tags="invalid"
@@ -459,18 +447,18 @@ class MazeView:
             self.root.after(100, lambda: self.canvas.delete("invalid"))
 
     def draw_player(self):
-        """Dibuja al jugador en su posición actual."""
+        """Dibuja el marcador del jugador en su posición actual."""
         if not self.player_position:
             return
 
-        x = self.player_position[0] * self.cell_size + self.margin + self.cell_size // 2
-        y = self.player_position[1] * self.cell_size + self.margin + self.cell_size // 2
+        x = (self.player_position[0] * self.cell_size + self.margin +
+             self.cell_size // 2)
+        y = (self.player_position[1] * self.cell_size + self.margin +
+             self.cell_size // 2)
         radius = 7
 
-        # Borrar jugador anterior
         self.canvas.delete("player")
 
-        # Dibujar nuevo jugador
         self.canvas.create_oval(
             x - radius, y - radius,
             x + radius, y + radius,

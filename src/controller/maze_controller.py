@@ -8,14 +8,15 @@ from view.maze_view import MazeView
 
 
 class MazeController:
-    """Controlador principal que conecta la vista con la lógica del laberinto."""
+    """Controlador que conecta la vista con la lógica del laberinto."""
 
     def __init__(self, root):
+        """Inicializa el controlador con la ventana raíz de Tkinter."""
         self.graph = None
         self.view = MazeView(root, self)
 
     def generate_maze(self, width, height, algorithm, passages_ratio):
-        """Genera un nuevo laberinto (DFS, Kruskal o Prim)."""
+        """Genera un nuevo laberinto usando el algoritmo especificado."""
         self.graph = Graph(width, height)
 
         self.view.update_info(f"Generando laberinto con {algorithm}...")
@@ -32,10 +33,12 @@ class MazeController:
 
         nodes = len(self.graph.nodes())
         edges = sum(len(v) for v in self.graph.adjacency.values()) // 2
-        self.view.update_info(f"Laberinto generado con {algorithm} | {nodes} nodos, {edges} aristas")
+        self.view.update_info(
+            f"Laberinto generado con {algorithm} | {nodes} nodos, {edges} aristas"
+        )
 
     def solve_maze(self, algorithm):
-        """Resuelve el laberinto con BFS, A* o Dijkstra."""
+        """Resuelve el laberinto con el algoritmo especificado."""
         if not self.graph:
             messagebox.showerror("Error", "Primero debes generar un laberinto.")
             return
@@ -44,7 +47,9 @@ class MazeController:
         end = self.graph.exit
 
         if not start or not end:
-            messagebox.showerror("Error", "El laberinto no tiene puntos de entrada o salida.")
+            messagebox.showerror(
+                "Error", "El laberinto no tiene puntos de entrada o salida."
+            )
             return
 
         if self.view.mode == "maze":
@@ -63,12 +68,16 @@ class MazeController:
             color = "#6909C8"
             algo_name = "BFS"
         else:
-            messagebox.showerror("Error", f"Algoritmo de resolución no soportado: {algorithm}")
+            messagebox.showerror(
+                "Error", f"Algoritmo de resolución no soportado: {algorithm}"
+            )
             return
 
         if path:
             self.view.update_info(f"Resolviendo con {algo_name}...")
             self.view.draw_path_animated(path, delay=30, visited=visited, color=color)
         else:
-            messagebox.showerror("Error", "No se encontró un camino entre la entrada y la salida.")
+            messagebox.showerror(
+                "Error", "No se encontró un camino entre la entrada y la salida."
+            )
             self.view.update_info("No hay solución disponible")
