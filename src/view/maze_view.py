@@ -22,7 +22,7 @@ class MazeView:
             "Mediano": {"size": (35, 25), "passages": 0.5},
             "Grande": {"size": (45, 30), "passages": 0.3}
         }
-        self.current_difficulty = "Fácil"
+        self.current_difficulty = "Pequeño"
 
         # Calcular tamaño inicial de canvas
         initial_size = self.difficulties["Pequeño"]["size"]
@@ -140,8 +140,10 @@ class MazeView:
         self.current_difficulty = value
         config = self.difficulties[value]
         width, height = config["size"]
+        self.resize_canvas(width, height)
+        self.canvas.delete("all")
 
-        self.update_info(f"Dificultad: {value} ({width}x{height} celdas)")
+        self.update_info(f"Tamaño: {value} ({width}x{height} celdas)")
 
     def resize_canvas(self, width, height):
         """Redimensiona el canvas según el tamaño del laberinto."""
