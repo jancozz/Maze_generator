@@ -18,9 +18,9 @@ class MazeView:
         self.cell_size = 25
         self.margin = 15
         self.difficulties = {
-            "Pequeño": {"size": (25, 25), "passages": 0.5},
-            "Mediano": {"size": (35, 25), "passages": 0.30},
-            "Grande": {"size": (45, 30), "passages": 0.15}
+            "Pequeño": {"size": (25, 25), "passages": 0.7},
+            "Mediano": {"size": (35, 25), "passages": 0.5},
+            "Grande": {"size": (45, 30), "passages": 0.3}
         }
         self.current_difficulty = "Fácil"
 
