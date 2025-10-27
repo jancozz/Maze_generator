@@ -213,12 +213,12 @@ class MazeView:
 
         # Dibujar apertura de salida
         if graph.exit:
-            self._draw_opening(graph.exit, graph.width, graph.height)
+            self.draw_opening(graph.exit, graph.width, graph.height)
 
         # Dibujar flecha de salida
         self._draw_exit_arrow(graph)
 
-    def _draw_opening(self, node, width, height):
+    def draw_opening(self, node, width, height):
         """Rompe la pared del borde en la entrada o salida."""
         x, y = node
         x1 = x * self.cell_size + self.margin
@@ -250,6 +250,7 @@ class MazeView:
 
     def draw_path_animated(self, path, delay, color="#057032"):
         """Dibuja el camino como una línea animada que crece paso a paso."""
+        self.draw_player()
 
         def draw_step(index):
             if index == 0:
@@ -322,45 +323,18 @@ class MazeView:
         )
 
     def move_player(self, dx, dy):
-        """Mueve al jugador en la dirección especificada."""
+        """Mueve al jugador en la dirección especificada con animación fluida."""
         if not self.manual_mode or not self.player_position:
             return
 
         current = self.player_position
         new_position = (current[0] + dx, current[1] + dy)
 
-        # Verificar si el movimiento es válido (hay arista en el grafo)
+        # Verificar si el movimiento es válido
         neighbors = self.controller.graph.neighbors(current)
-
-        if new_position in neighbors:
-            self.player_position = new_position
-            self.manual_path.append(new_position)
-
-            # Sonido de movimiento
-            self.play_sound('move')
-
-            # Redibujar
-            self.draw_maze(self.controller.graph)
-            self.draw_manual_path()
-            self.draw_player()
-
-            # Verificar si llegó a la salida
-            if self.player_position == self.controller.graph.exit:
-                # Sonido de victoria
-                self.play_sound('victory')
-
-                messagebox.showinfo("¡Felicitaciones!", "¡Completaste el laberinto!")
-                self.update_info(
-                    f"Completado en {len(self.manual_path) - 1} movimientos"
-                )
-                self.manual_mode = False
-            else:
-                self.update_info(
-                    f"Movimientos: {len(self.manual_path) - 1}"
-                )
-        else:
-            # Movimiento inválido (hay pared)
-            self.play_sound('wall')  # Sonido de pared
+        if new_position not in neighbors:
+            # Movimiento inválido
+            self.play_sound('wall')
             canvas_width = self.controller.graph.width * self.cell_size + self.margin * 2
             canvas_height = self.controller.graph.height * self.cell_size + self.margin * 2
             self.canvas.create_rectangle(
@@ -368,6 +342,52 @@ class MazeView:
                 fill="", outline="#FF0000", width=5, tags="invalid"
             )
             self.root.after(100, lambda: self.canvas.delete("invalid"))
+            return
+
+        # Movimiento válido
+        self.play_sound('move')
+
+        # Animar el movimiento
+        steps = 200  # número de frames en la animación
+        x0, y0 = current[0] * self.cell_size, current[1] * self.cell_size
+        x1, y1 = new_position[0] * self.cell_size, new_position[1] * self.cell_size
+
+        dx_step = (x1 - x0) / steps
+        dy_step = (y1 - y0) / steps
+
+        player_item = getattr(self, "player_item", None)
+
+        if player_item is None:
+            # Si aún no hay representación del jugador, dibujarla
+            player_item = self.canvas.create_oval(
+                x0 + self.margin + 5, y0 + self.margin + 5,
+                x0 + self.cell_size - 5, y0 + self.cell_size - 5,
+                fill="blue", outline=""
+            )
+
+        def animate(step=0):
+            if step < steps:
+                self.canvas.move(player_item, dx_step, dy_step)
+                self.root.after(0, lambda: animate(step + 1))
+            else:
+                # Al final, actualizar la posición y el camino
+                self.player_position = new_position
+                self.manual_path.append(new_position)
+
+                self.draw_maze(self.controller.graph)
+                self.draw_manual_path()
+                self.draw_player()
+
+                # Verificar si llegó a la salida
+                if self.player_position == self.controller.graph.exit:
+                    self.play_sound('victory')
+                    messagebox.showinfo("¡Felicitaciones!", "¡Completaste el laberinto!")
+                    self.update_info(f"Completado en {len(self.manual_path) - 1} movimientos")
+                    self.manual_mode = False
+                else:
+                    self.update_info(f"Movimientos: {len(self.manual_path) - 1}")
+
+        animate()
 
     def draw_player(self):
         """Dibuja al jugador en su posición actual."""
@@ -389,13 +409,20 @@ class MazeView:
         )
 
     def draw_manual_path(self):
-        """Dibuja el camino recorrido por el jugador."""
+        """Dibuja el camino recorrido por el jugador (sin diagonales)."""
         if len(self.manual_path) < 2:
             return
+
+        # Elimina cualquier trazo previo del camino
+        self.canvas.delete("manual_path")
 
         for i in range(1, len(self.manual_path)):
             x1, y1 = self.manual_path[i - 1]
             x2, y2 = self.manual_path[i]
+
+            # Evitar diagonales: solo dibujar si cambia una sola coordenada
+            if (x1 != x2) and (y1 != y2):
+                continue  # ignorar movimiento diagonal
 
             x1 = x1 * self.cell_size + self.margin + self.cell_size // 2
             y1 = y1 * self.cell_size + self.margin + self.cell_size // 2
@@ -406,3 +433,4 @@ class MazeView:
                 x1, y1, x2, y2,
                 fill="#4CAF50", width=4, tags="manual_path"
             )
+
