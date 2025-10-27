@@ -143,8 +143,10 @@ class MazeView:
         self.current_difficulty = value
         config = self.difficulties[value]
         width, height = config["size"]
+        self.canvas.delete("all")
+        self.resize_canvas(width, height)
 
-        self.update_info(f"Dificultad: {value} ({width}x{height} celdas)")
+        self.update_info(f"Tamaño: {width}x{height}")
 
     def resize_canvas(self, width, height):
         """Redimensiona el canvas según el tamaño del laberinto."""
@@ -267,6 +269,11 @@ class MazeView:
             y1 = y1 * self.cell_size + self.margin + self.cell_size // 2
             x2 = x2 * self.cell_size + self.margin + self.cell_size // 2
             y2 = y2 * self.cell_size + self.margin + self.cell_size // 2
+
+            if index == 1:
+                # Calcular el punto medio entre el nodo 0 y el nodo 1
+                x1 = (x1 + x2) / 2
+                y1 = (y1 + y2) / 2
 
             self.canvas.create_line(x1, y1, x2, y2, fill=color, width=6, tags="path")
             self.root.after(delay, lambda: draw_step(index + 1))
