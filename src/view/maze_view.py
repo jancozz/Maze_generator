@@ -74,7 +74,7 @@ class MazeView:
             width=360,
             selected_color="gray"
         )
-        difficulty_selector.set("Fácil")
+        difficulty_selector.set("Pequeño")
         difficulty_selector.grid(row=0, column=0, columnspan=4, padx=8, pady=5)
 
         # --- FILA 2 ---
