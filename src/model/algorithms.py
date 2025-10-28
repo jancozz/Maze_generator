@@ -1,6 +1,4 @@
-import heapq
 import random
-from collections import deque
 
 
 class DisjointSet:
@@ -104,13 +102,16 @@ def add_extra_passages(graph, ratio):
 
 
 def solve_maze_bfs(graph, start, end):
-    """Resuelve el laberinto usando BFS, retorna camino y nodos visitados."""
-    queue = deque([start])
+    """Resuelve el laberinto usando BFS sin deque."""
+    queue = [start]
     visited = {start}
     came_from = {}
+    index = 0
 
-    while queue:
-        current = queue.popleft()
+    while index < len(queue):
+        current = queue[index]
+        index += 1
+
         if current == end:
             break
 
@@ -134,24 +135,23 @@ def solve_maze_bfs(graph, start, end):
 
 
 def solve_maze_astar(graph, start, end):
-    """Resuelve el laberinto usando A*, retorna camino y nodos visitados."""
+    """Resuelve el laberinto usando A* sin heapq."""
 
     def heuristic(a, b):
         """Calcula la distancia Manhattan entre dos nodos."""
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-    open_heap = []
-    heapq.heappush(open_heap, (heuristic(start, end), start))
+    open_list = [(heuristic(start, end), start)]
 
     came_from = {}
     g_score = {start: 0}
     f_score = {start: heuristic(start, end)}
     visited = set()
-    in_open = {start}
 
-    while open_heap:
-        _, current = heapq.heappop(open_heap)
-        in_open.discard(current)
+    while open_list:
+        # Buscar el nodo con menor f_score
+        open_list.sort(key=lambda x: x[0])
+        _, current = open_list.pop(0)
 
         if current in visited:
             continue
@@ -172,9 +172,7 @@ def solve_maze_astar(graph, start, end):
                 g_score[neighbor] = tentative_g
                 f_score[neighbor] = tentative_g + heuristic(neighbor, end)
 
-                if neighbor not in in_open:
-                    heapq.heappush(open_heap, (f_score[neighbor], neighbor))
-                    in_open.add(neighbor)
+                open_list.append((f_score[neighbor], neighbor))
 
     # Reconstrucción del camino
     path = []
