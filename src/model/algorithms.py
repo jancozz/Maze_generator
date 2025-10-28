@@ -102,7 +102,7 @@ def add_extra_passages(graph, ratio):
 
 
 def solve_maze_bfs(graph, start, end):
-    """Resuelve el laberinto usando BFS sin deque."""
+    """Resuelve el laberinto usando BFS."""
     queue = [start]
     visited = {start}
     came_from = {}
@@ -135,7 +135,7 @@ def solve_maze_bfs(graph, start, end):
 
 
 def solve_maze_astar(graph, start, end):
-    """Resuelve el laberinto usando A* sin heapq."""
+    """Resuelve el laberinto usando A*."""
 
     def heuristic(a, b):
         """Calcula la distancia Manhattan entre dos nodos."""
